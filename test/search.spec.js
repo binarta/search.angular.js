@@ -64,9 +64,14 @@ describe('search.js', function() {
                         request().success('search-results');
                     });
 
-                    it('test', function() {
+                    it('exposed on scope', function() {
                         expect($scope.results).toEqual('search-results');
                     });
+
+                    it('subsequent searches rest results', function() {
+                        $scope.search();
+                        expect($scope.results).toEqual([]);
+                    })
                 });
             });
         });
