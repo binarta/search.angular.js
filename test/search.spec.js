@@ -57,6 +57,17 @@ describe('search.js', function() {
                     $scope.search();
                     expect(request().params.data.args.anotherFilter).toEqual('X');
                 });
+
+                describe('and with search results', function() {
+                    beforeEach(function() {
+                        $scope.search();
+                        request().success('search-results');
+                    });
+
+                    it('test', function() {
+                        expect($scope.results).toEqual('search-results');
+                    });
+                });
             });
         });
     });

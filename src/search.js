@@ -11,6 +11,9 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
             url: config.baseUri + 'api/query/' + args.entity + '/' + args.context,
             data: {args: {namespace: config.namespace}}
         };
+        request.success = function(results) {
+            $scope.results = results;
+        };
         ngRegisterTopicHandler($scope, 'i18n.locale', function (locale) {
             request.params.headers = {'Accept-Language': locale};
             ngRegisterTopicHandler($scope, 'app.start', $scope.search);
