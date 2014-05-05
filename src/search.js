@@ -9,6 +9,11 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     };
 
     function exposeSearchResultsOnScope(results) {
+        results.forEach(function(it) {
+            it.remove = function() {
+                results.splice(results.indexOf(it), 1);
+            }
+        });
         $scope.results = results;
     }
 

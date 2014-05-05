@@ -59,19 +59,27 @@ describe('search.js', function() {
                 });
 
                 describe('and with search results', function() {
+                    var results;
+
                     beforeEach(function() {
+                        results = [{name:'item-1'}];
                         $scope.search();
-                        request().success('search-results');
+                        request().success(results);
                     });
 
                     it('exposed on scope', function() {
-                        expect($scope.results).toEqual('search-results');
+                        expect($scope.results).toEqual(results);
                     });
 
                     it('subsequent searches rest results', function() {
                         $scope.search();
                         expect($scope.results).toEqual([]);
-                    })
+                    });
+
+                    it('search results can be removed from the view', function() {
+                        results[0].remove();
+                        expect(results).toEqual([]);
+                    });
                 });
             });
         });
