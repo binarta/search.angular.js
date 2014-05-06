@@ -1,7 +1,7 @@
 angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
-    .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', BinartaSearchController]);
+    .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', BinartaSearchController]);
 
-function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler) {
+function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location) {
     var request = usecaseAdapterFactory($scope);
 
     $scope.init = function (args) {
@@ -43,12 +43,18 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     function Initializer(args) {
         this.execute = function() {
             exposeFiltersOnScope();
+            extractSearchTextFromUrl();
             prepareRestQuery();
             withLocale($scope.search);
         };
 
         function exposeFiltersOnScope() {
             $scope.filters = args.filters;
+        }
+
+        function extractSearchTextFromUrl() {
+            $scope.q = $location.search().q;
+            $location.search('q', null);
         }
 
         function prepareRestQuery() {
@@ -64,8 +70,25 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
         function withLocale(callback) {
             ngRegisterTopicHandler($scope, 'i18n.locale', function (locale) {
                 request.params.headers = {'Accept-Language': locale};
-                ngRegisterTopicHandler($scope, 'app.start', callback);
+                if (args.autosearch) ngRegisterTopicHandler($scope, 'app.start', callback);
             });
         }
+    }
+}
+
+function RedirectToSearchController($scope, $location) {
+    var self = this;
+
+    $scope.init = function(args) {
+        self.config = args || {};
+    };
+
+    $scope.submit = function() {
+        $location.search('q', $scope.q);
+        $location.path(localizedPrefix() + self.config.page);
+    };
+
+    function localizedPrefix() {
+        return $scope.locale != null ? '/' + $scope.locale : ''
     }
 }
