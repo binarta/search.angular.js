@@ -44,6 +44,7 @@ describe('search.js', function() {
                     expect(request().params.url).toEqual('http://host/api/query/E/C');
                     expect(request().params.data.args).toEqual({namespace:'N', customField:'F'});
                     expect(request().params.headers['Accept-Language']).toEqual('en');
+                    expect(request().params.withCredentials).toBeTruthy();
                 });
 
                 it('and search with query string', function() {
@@ -80,6 +81,11 @@ describe('search.js', function() {
                         results[0].remove();
                         expect(results).toEqual([]);
                     });
+
+                    it('test', inject(function() {
+                        results[0].update({name:'item-1-alt'});
+                        expect(results[0].name).toEqual('item-1-alt');
+                    }));
                 });
             });
         });

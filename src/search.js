@@ -12,7 +12,12 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
         results.forEach(function(it) {
             it.remove = function() {
                 results.splice(results.indexOf(it), 1);
-            }
+            };
+            it.update = function(args) {
+                Object.keys(args).forEach(function(key) {
+                    it[key] = args[key];
+                });
+            };
         });
         $scope.results = results;
     }
@@ -50,7 +55,8 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
             request.params = {
                 method: 'POST',
                 url: config.baseUri + 'api/query/' + args.entity + '/' + args.context,
-                data: {args: {namespace: config.namespace}}
+                data: {args: {namespace: config.namespace}},
+                withCredentials: true
             };
             request.success = exposeSearchResultsOnScope;
         }
