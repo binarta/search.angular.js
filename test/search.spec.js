@@ -126,6 +126,11 @@ describe('search.js', function() {
                                 expect(request().params.data.args.subset).toEqual({offset:10, count:10});
                             });
 
+                            it('new searches reset the offset', function() {
+                                $scope.search();
+                                expect(request().params.data.args.subset).toEqual({offset:0, count:10});
+                            });
+
                             describe('and more results found', function() {
                                 beforeEach(function() {
                                     request().success(results);

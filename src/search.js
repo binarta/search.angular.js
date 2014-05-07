@@ -28,6 +28,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     }
 
     function reset() {
+        request.params.data.args.subset = {offset:0, count:10};
         $scope.results = [];
     }
 
@@ -78,7 +79,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
             request.params = {
                 method: 'POST',
                 url: config.baseUri + 'api/query/' + args.entity + '/' + args.context,
-                data: {args: {namespace: config.namespace, subset: {offset: 0, count: 10}}},
+                data: {args: {namespace: config.namespace}},
                 withCredentials: true
             };
             request.success = exposeSearchResultsOnScope;
