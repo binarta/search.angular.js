@@ -149,6 +149,7 @@ describe('search.js', function() {
 
                             describe('and searching for more', function() {
                                 beforeEach(function() {
+                                    request().success([]);
                                     rest.reset();
                                     $scope.searchForMore();
                                 });
