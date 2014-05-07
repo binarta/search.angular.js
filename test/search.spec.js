@@ -71,7 +71,7 @@ describe('search.js', function() {
                         $scope.search();
                         expect(request().params.method).toEqual('POST');
                         expect(request().params.url).toEqual('http://host/api/query/E/C');
-                        expect(request().params.data.args).toEqual({namespace:'N', customField:'F'});
+                        expect(request().params.data.args).toEqual({namespace:'N', customField:'F', subset:{offset:0, count:10}});
                         expect(request().params.headers['Accept-Language']).toEqual('en');
                         expect(request().params.withCredentials).toBeTruthy();
                     });
@@ -115,6 +115,49 @@ describe('search.js', function() {
                             results[0].update({name:'item-1-alt'});
                             expect(results[0].name).toEqual('item-1-alt');
                         }));
+
+                        describe('when searching for more', function() {
+                            beforeEach(function() {
+                                rest.reset();
+                                $scope.searchForMore();
+                            });
+
+                            it('increment offset with count', function() {
+                                expect(request().params.data.args.subset).toEqual({offset:10, count:10});
+                            });
+
+                            describe('and more results found', function() {
+                                beforeEach(function() {
+                                    request().success(results);
+                                });
+
+                                it('append to search results', function() {
+                                    expect($scope.results.length).toEqual(2);
+                                });
+
+                                describe('and searching for more', function() {
+                                    beforeEach(function() {
+                                        rest.reset();
+                                        $scope.searchForMore();
+                                    });
+
+                                    it('increment offset with count', function() {
+                                        expect(request().params.data.args.subset).toEqual({offset:20, count:10});
+                                    });
+                                });
+                            });
+
+                            describe('and searching for more', function() {
+                                beforeEach(function() {
+                                    rest.reset();
+                                    $scope.searchForMore();
+                                });
+
+                                it('increment offset with count', function() {
+                                    expect(request().params.data.args.subset).toEqual({offset:10, count:10});
+                                });
+                            });
+                        });
                     });
                 })
             });

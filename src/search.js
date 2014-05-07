@@ -9,8 +9,9 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     };
 
     function exposeSearchResultsOnScope(results) {
-        results.forEach(function(it) {
-            it.remove = function() {
+        incrementOffset();
+        results.forEach(function (it) {
+            it.remove = function () {
                 results.splice(results.indexOf(it), 1);
             };
             it.update = function(args) {
@@ -18,16 +19,28 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
                     it[key] = args[key];
                 });
             };
+            $scope.results.push(it);
         });
-        $scope.results = results;
+    }
+
+    function incrementOffset() {
+        request.params.data.args.subset.offset += 10;
+    }
+
+    function reset() {
+        $scope.results = [];
     }
 
     $scope.search = function () {
-        exposeSearchResultsOnScope([]);
+        reset();
+        executeSearch();
+    };
+
+    function executeSearch() {
         applyCustomerFilters();
         applySearchQueryFilter();
         restServiceHandler(request);
-    };
+    }
 
     function applyCustomerFilters() {
         Object.keys($scope.filters).reduce(function (p, c) {
@@ -40,8 +53,12 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
         request.params.data.args.q = $scope.q;
     }
 
+    $scope.searchForMore = function () {
+        executeSearch();
+    };
+
     function Initializer(args) {
-        this.execute = function() {
+        this.execute = function () {
             exposeFiltersOnScope();
             extractSearchTextFromUrl();
             prepareRestQuery();
@@ -61,7 +78,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
             request.params = {
                 method: 'POST',
                 url: config.baseUri + 'api/query/' + args.entity + '/' + args.context,
-                data: {args: {namespace: config.namespace}},
+                data: {args: {namespace: config.namespace, subset: {offset: 0, count: 10}}},
                 withCredentials: true
             };
             request.success = exposeSearchResultsOnScope;
