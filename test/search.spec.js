@@ -123,7 +123,7 @@ describe('search.js', function() {
                             });
 
                             it('increment offset with count', function() {
-                                expect(request().params.data.args.subset).toEqual({offset:10, count:10});
+                                expect(request().params.data.args.subset).toEqual({offset:1, count:10});
                             });
 
                             it('new searches reset the offset', function() {
@@ -147,7 +147,7 @@ describe('search.js', function() {
                                     });
 
                                     it('increment offset with count', function() {
-                                        expect(request().params.data.args.subset).toEqual({offset:20, count:10});
+                                        expect(request().params.data.args.subset).toEqual({offset:2, count:10});
                                     });
                                 });
                             });
@@ -160,7 +160,7 @@ describe('search.js', function() {
                                 });
 
                                 it('increment offset with count', function() {
-                                    expect(request().params.data.args.subset).toEqual({offset:10, count:10});
+                                    expect(request().params.data.args.subset).toEqual({offset:1, count:10});
                                 });
                             });
                         });
