@@ -167,6 +167,12 @@ describe('search.js', function() {
                     });
                 })
             });
+
+            it('a custom page size can be specified on init', function() {
+                $scope.init({subset:{count:5}});
+                $scope.search();
+                expect(request().params.data.args).toEqual({namespace:'N', subset:{offset:0, count:5}});
+            });
         });
     });
 
