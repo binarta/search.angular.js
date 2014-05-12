@@ -12,7 +12,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
         if(results.length > 0) incrementOffset(results.length);
         results.forEach(function (it) {
             it.remove = function () {
-                results.splice(results.indexOf(it), 1);
+                $scope.results.splice($scope.results.indexOf(it), 1);
             };
             it.update = function(args) {
                 Object.keys(args).forEach(function(key) {

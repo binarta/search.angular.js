@@ -108,7 +108,7 @@ describe('search.js', function() {
 
                         it('search results can be removed from the view', function() {
                             results[0].remove();
-                            expect(results).toEqual([]);
+                            expect($scope.results).toEqual([]);
                         });
 
                         it('search results can be updated', inject(function() {
