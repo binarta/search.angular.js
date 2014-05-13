@@ -89,9 +89,14 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
         }
 
         function withLocale(callback) {
-            ngRegisterTopicHandler($scope, 'i18n.locale', function (locale) {
-                request.params.headers = {'Accept-Language': locale};
-                if (args.autosearch) ngRegisterTopicHandler($scope, 'app.start', callback);
+            ngRegisterTopicHandler({
+                scope: $scope,
+                topic: 'i18n.locale',
+                handler: function (locale) {
+                    request.params.headers = {'Accept-Language': locale};
+                    if (args.autosearch) ngRegisterTopicHandler($scope, 'app.start', callback);
+                },
+                executeHandlerOnce: true
             });
         }
     }
