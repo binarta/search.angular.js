@@ -171,7 +171,7 @@ describe('search.js', function() {
                                 });
 
                                 it('send notification', function () {
-                                    expect(dispatcher['system.success']).toEqual({
+                                    expect(dispatcher['system.info']).toEqual({
                                         code: 'no.more.results.found',
                                         default: 'No more results found.'
                                     });
@@ -185,7 +185,7 @@ describe('search.js', function() {
                                 });
 
                                 it('no notification sent', function () {
-                                    expect(dispatcher['system.success']).toBeUndefined();
+                                    expect(dispatcher['system.info']).toBeUndefined();
                                 });
                             });
                         });

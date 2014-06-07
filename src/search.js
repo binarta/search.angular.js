@@ -22,7 +22,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
             $scope.results.push(it);
         });
         if ($scope.results.length > 0 && results.length == 0)
-            topicMessageDispatcher.fire('system.success', {
+            topicMessageDispatcher.fire('system.info', {
                 code: 'no.more.results.found',
                 default: 'No more results found.'
             });
