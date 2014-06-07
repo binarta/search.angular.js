@@ -1,7 +1,7 @@
 angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
-    .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', BinartaSearchController]);
+    .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', BinartaSearchController]);
 
-function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location) {
+function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher) {
     var request = usecaseAdapterFactory($scope);
 
     $scope.init = function (args) {
@@ -21,6 +21,11 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
             };
             $scope.results.push(it);
         });
+        if ($scope.results.length > 0 && results.length == 0)
+            topicMessageDispatcher.fire('system.success', {
+                code: 'no.more.results.found',
+                default: 'No more results found.'
+            });
     }
 
     function incrementOffset(count) {

@@ -1,11 +1,12 @@
 describe('search.js', function() {
-    var ctrl, $scope, rest, topics;
+    var ctrl, $scope, rest, topics, dispatcher;
 
     beforeEach(module('binarta.search'));
-    beforeEach(inject(function($rootScope, restServiceHandler, config, topicRegistryMock) {
+    beforeEach(inject(function($rootScope, restServiceHandler, config, topicRegistryMock, topicMessageDispatcherMock) {
         $scope = $rootScope.$new();
         rest = restServiceHandler;
         topics = topicRegistryMock;
+        dispatcher = topicMessageDispatcherMock;
         config.namespace = 'N';
         config.baseUri = 'http://host/';
     }));
@@ -161,6 +162,30 @@ describe('search.js', function() {
 
                                 it('increment offset with count', function() {
                                     expect(request().params.data.args.subset).toEqual({offset:1, count:10});
+                                });
+                            });
+
+                            describe('when no more are found', function () {
+                                beforeEach(function() {
+                                    request().success([]);
+                                });
+
+                                it('send notification', function () {
+                                    expect(dispatcher['system.success']).toEqual({
+                                        code: 'no.more.results.found',
+                                        default: 'No more results found.'
+                                    });
+                                });
+                            });
+
+                            describe('when no items on scope', function () {
+                                beforeEach(function () {
+                                    $scope.results = [];
+                                    request().success([]);
+                                });
+
+                                it('no notification sent', function () {
+                                    expect(dispatcher['system.success']).toBeUndefined();
                                 });
                             });
                         });
