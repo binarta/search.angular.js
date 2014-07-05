@@ -34,7 +34,6 @@ describe('search.js', function() {
                     $location.search('q', 'text');
                     $scope.init({});
                     expect($scope.q).toEqual('text');
-                    expect($location.search().q).toBeUndefined();
                 }));
 
                 describe('and locale selected', function() {
@@ -77,11 +76,12 @@ describe('search.js', function() {
                         expect(request().params.withCredentials).toBeTruthy();
                     });
 
-                    it('and search with query string', function() {
+                    it('and search with query string', inject(function($location) {
                         $scope.q = 'query-string';
                         $scope.search();
                         expect(request().params.data.args.q).toEqual($scope.q);
-                    });
+                        expect($location.search()).toEqual({q:'query-string'});
+                    }));
 
                     it('and search with custom filters defined through $scope', function() {
                         $scope.filters.anotherFilter = 'X';

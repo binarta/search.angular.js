@@ -59,6 +59,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
 
     function applySearchQueryFilter() {
         request.params.data.args.q = $scope.q;
+        $location.search('q', $scope.q);
     }
 
     $scope.searchForMore = function () {
@@ -80,7 +81,6 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
 
         function extractSearchTextFromUrl() {
             $scope.q = $location.search().q;
-            $location.search('q', null);
         }
 
         function prepareRestQuery() {
