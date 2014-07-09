@@ -189,6 +189,12 @@ describe('search.js', function() {
                                 });
                             });
                         });
+
+                        it('scrolling down to the end of the page will search for more', function() {
+                            rest.reset();
+                            topics['end.of.page']('reached');
+                            expect(request()).toBeDefined();
+                        });
                     });
                 })
             });

@@ -2,6 +2,11 @@ angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'con
     .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', BinartaSearchController]);
 
 function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher) {
+    ngRegisterTopicHandler($scope, 'end.of.page', function (it) {
+        console.log('listenerFor(end.of.page):' + it);
+        $scope.searchForMore();
+    });
+
     var request = usecaseAdapterFactory($scope);
 
     $scope.init = function (args) {
@@ -9,13 +14,13 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     };
 
     function exposeSearchResultsOnScope(results) {
-        if(results.length > 0) incrementOffset(results.length);
+        if (results.length > 0) incrementOffset(results.length);
         results.forEach(function (it) {
             it.remove = function () {
                 $scope.results.splice($scope.results.indexOf(it), 1);
             };
-            it.update = function(args) {
-                Object.keys(args).forEach(function(key) {
+            it.update = function (args) {
+                Object.keys(args).forEach(function (key) {
                     it[key] = args[key];
                 });
             };
@@ -32,10 +37,10 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
         request.params.data.args.subset.offset += count;
     }
 
-    var defaultSubset = {offset:0, count:10};
+    var defaultSubset = {offset: 0, count: 10};
 
     function reset() {
-        request.params.data.args.subset = {offset:defaultSubset.offset, count:defaultSubset.count};
+        request.params.data.args.subset = {offset: defaultSubset.offset, count: defaultSubset.count};
         $scope.results = [];
     }
 
@@ -51,7 +56,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     }
 
     function applyCustomFilters() {
-        if($scope.filters) Object.keys($scope.filters).reduce(function (p, c) {
+        if ($scope.filters) Object.keys($scope.filters).reduce(function (p, c) {
             p[c] = $scope.filters[c];
             return p;
         }, request.params.data.args);
@@ -69,7 +74,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     function Initializer(args) {
         this.execute = function () {
             exposeFiltersOnScope();
-            if(args.subset && args.subset.count) defaultSubset.count = args.subset.count;
+            if (args.subset && args.subset.count) defaultSubset.count = args.subset.count;
             extractSearchTextFromUrl();
             prepareRestQuery();
             withLocale($scope.search);
@@ -110,11 +115,11 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
 function RedirectToSearchController($scope, $location) {
     var self = this;
 
-    $scope.init = function(args) {
+    $scope.init = function (args) {
         self.config = args || {};
     };
 
-    $scope.submit = function() {
+    $scope.submit = function () {
         $location.search('q', $scope.q);
         $location.path(localizedPrefix() + self.config.page);
     };
