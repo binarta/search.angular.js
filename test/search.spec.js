@@ -102,7 +102,7 @@ describe('search.js', function() {
                             expect($scope.results).toEqual(results);
                         });
 
-                        it('subsequent searches rest results', function() {
+                        it('subsequent searches reset results', function() {
                             $scope.search();
                             expect($scope.results).toEqual([]);
                         });
