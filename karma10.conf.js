@@ -9,6 +9,7 @@ module.exports = function(config) {
             {pattern:'bower_components/thk-rest-client-mock/src/rest.client.mock.js'},
             {pattern:'bower_components/thk-config-mock/src/config.mock.js'},
             {pattern:'bower_components/thk-notifications-mock/src/notifications.mock.js'},
+            {pattern:'bower_components/binarta.underscorex.angular/src/underscorex.angular.mocks.js'},
             {pattern:'src/**/*.js'},
             {pattern:'test/**/*.js'}
         ],

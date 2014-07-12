@@ -1,10 +1,9 @@
-angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
-    .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', BinartaSearchController]);
+angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications', 'underscore'])
+    .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', '$underscore', BinartaSearchController]);
 
-function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher) {
+function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher, $underscore) {
     ngRegisterTopicHandler($scope, 'end.of.page', function (it) {
-        console.log('listenerFor(end.of.page):' + it);
-        $scope.searchForMore();
+        $underscore.debounce($scope.searchForMore, 200, true);
     });
 
     var request = usecaseAdapterFactory($scope);

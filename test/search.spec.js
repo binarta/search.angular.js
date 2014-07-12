@@ -190,11 +190,14 @@ describe('search.js', function() {
                             });
                         });
 
-                        it('scrolling down to the end of the page will search for more', function() {
+                        it('scrolling down to the end of the page will search for more', inject(function($underscore) {
                             rest.reset();
                             topics['end.of.page']('reached');
+                            $underscore.debounced.callback();
                             expect(request()).toBeDefined();
-                        });
+                            expect($underscore.debounced.wait).toEqual(200);
+                            expect($underscore.debounced.immediate).toEqual(true);
+                        }));
                     });
                 })
             });
