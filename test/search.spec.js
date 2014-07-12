@@ -190,14 +190,22 @@ describe('search.js', function() {
                             });
                         });
 
-                        it('scrolling down to the end of the page will search for more', inject(function($underscore) {
-                            rest.reset();
-                            topics['end.of.page']('reached');
-                            $underscore.debounced.callback();
-                            expect(request()).toBeDefined();
-                            expect($underscore.debounced.wait).toEqual(200);
-                            expect($underscore.debounced.immediate).toEqual(true);
-                        }));
+                        describe('when scrolling down to the end of the page', function() {
+                            beforeEach(function() {
+                                rest.reset();
+                            });
+
+                            it('then search for more', function() {
+                                topics['end.of.page']('reached');
+                                expect(request()).toBeDefined();
+                            });
+
+                            it('then only search for more when not working', function() {
+                                $scope.working = true;
+                                topics['end.of.page']('reached');
+                                expect(rest.calls[0]).toBeUndefined();
+                            });
+                        });
                     });
                 })
             });

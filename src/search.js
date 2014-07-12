@@ -3,7 +3,7 @@ angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'con
 
 function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher, $underscore) {
     ngRegisterTopicHandler($scope, 'end.of.page', function (it) {
-        $underscore.debounce($scope.searchForMore, 200, true);
+        $scope.searchForMore();
     });
 
     var request = usecaseAdapterFactory($scope);
@@ -66,9 +66,9 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
         $location.search('q', $scope.q);
     }
 
-    $scope.searchForMore = function () {
-        executeSearch();
-    };
+    $scope.searchForMore = $underscore.debounce(function () {
+        if(!$scope.working) executeSearch();
+    }, 200, true);
 
     function Initializer(args) {
         this.execute = function () {
