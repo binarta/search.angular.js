@@ -189,25 +189,32 @@ describe('search.js', function() {
                                 });
                             });
                         });
-
-                        describe('when scrolling down to the end of the page', function() {
-                            beforeEach(function() {
-                                rest.reset();
-                            });
-
-                            it('then search for more', function() {
-                                topics['end.of.page']('reached');
-                                expect(request()).toBeDefined();
-                            });
-
-                            it('then only search for more when not working', function() {
-                                $scope.working = true;
-                                topics['end.of.page']('reached');
-                                expect(rest.calls[0]).toBeUndefined();
-                            });
-                        });
                     });
                 })
+            });
+
+            it('do not subscribe for end of page events when not enabled', function() {
+                $scope.init({});
+                expect(topics['end.of.page']).toBeUndefined();
+            });
+
+            describe('with search on end of page enabled', function() {
+                beforeEach(function() {
+                    $scope.init({searchOnEndOfPage:true});
+                });
+
+                describe('when scrolling down to the end of the page', function() {
+                    it('then search for more', function() {
+                        topics['end.of.page']('reached');
+                        expect(request()).toBeDefined();
+                    });
+
+                    it('then only search for more when not working', function() {
+                        $scope.working = true;
+                        topics['end.of.page']('reached');
+                        expect(rest.calls[0]).toBeUndefined();
+                    });
+                });
             });
 
             it('a custom page size can be specified on init', function() {

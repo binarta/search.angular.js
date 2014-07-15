@@ -2,10 +2,6 @@ angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'con
     .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', '$underscore', BinartaSearchController]);
 
 function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher, $underscore) {
-    ngRegisterTopicHandler($scope, 'end.of.page', function (it) {
-        $scope.searchForMore();
-    });
-
     $scope.$on('$routeUpdate', function() {
         exposeViewMode($location.search().viewMode);
     });
@@ -81,6 +77,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
 
     function Initializer(args) {
         this.execute = function () {
+            registerForEndOfPageEvents();
             exposeFiltersOnScope();
             exposeViewMode($location.search().viewMode ? $location.search().viewMode : args.viewMode);
             if (args.subset && args.subset.count) defaultSubset.count = args.subset.count;
@@ -88,6 +85,12 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
             prepareRestQuery();
             withLocale($scope.search);
         };
+
+        function registerForEndOfPageEvents() {
+            if(args.searchOnEndOfPage) ngRegisterTopicHandler($scope, 'end.of.page', function (it) {
+                $scope.searchForMore();
+            });
+        }
 
         function exposeFiltersOnScope() {
             $scope.filters = args.filters;
