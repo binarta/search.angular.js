@@ -8,7 +8,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
 
     function exposeViewMode(mode) {
         $scope.viewMode = mode;
-        $location.search().viewMode = mode;
+        if(mode) $location.search().viewMode = mode;
     }
 
     var request = usecaseAdapterFactory($scope);
