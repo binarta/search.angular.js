@@ -6,6 +6,15 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
         $scope.searchForMore();
     });
 
+    $scope.$on('$routeUpdate', function() {
+        exposeViewMode($location.search().viewMode);
+    });
+
+    function exposeViewMode(mode) {
+        $scope.viewMode = mode;
+        $location.search().viewMode = mode;
+    }
+
     var request = usecaseAdapterFactory($scope);
 
     $scope.init = function (args) {
@@ -73,6 +82,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     function Initializer(args) {
         this.execute = function () {
             exposeFiltersOnScope();
+            exposeViewMode($location.search().viewMode ? $location.search().viewMode : args.viewMode);
             if (args.subset && args.subset.count) defaultSubset.count = args.subset.count;
             extractSearchTextFromUrl();
             prepareRestQuery();

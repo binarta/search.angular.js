@@ -215,6 +215,35 @@ describe('search.js', function() {
                 $scope.search();
                 expect(request().params.data.args).toEqual({namespace:'N', subset:{offset:0, count:5}});
             });
+
+            describe('view mode', function() {
+                it('defaults to undefined', inject(function($location) {
+                    $scope.init({});
+                    expect($scope.viewMode).toBeUndefined();
+                    expect($location.search().viewMode).toBeUndefined();
+                }));
+
+                it('can be specified and exposed on scope', inject(function($location) {
+                    $scope.init({viewMode:'x'});
+                    expect($scope.viewMode).toEqual('x');
+                    expect($location.search().viewMode).toEqual('x');
+                }));
+
+                it('view mode specified on $location overrides init', inject(function($location) {
+                    $location.search().viewMode = 'x';
+                    $scope.init({viewMode:'y'});
+                    expect($scope.viewMode).toEqual('x');
+                    expect($location.search().viewMode).toEqual('x');
+                }));
+
+                it('on $routeUpdate adjust view mode on $scope', inject(function($location) {
+                    $scope.init({viewMode:'x'});
+                    $location.search().viewMode = 'y';
+                    $scope.$broadcast('$routeUpdate');
+                    expect($scope.viewMode).toEqual('y');
+                    expect($location.search().viewMode).toEqual('y');
+                }));
+            });
         });
     });
 
