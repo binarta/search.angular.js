@@ -1,7 +1,7 @@
-angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications', 'underscore'])
-    .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', '$underscore', BinartaSearchController]);
+angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
+    .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', BinartaSearchController]);
 
-function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher, $underscore) {
+function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher) {
     $scope.$on('$routeUpdate', function() {
         exposeViewMode($location.search().viewMode);
     });
@@ -71,9 +71,9 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
         $location.search('q', $scope.q);
     }
 
-    $scope.searchForMore = $underscore.debounce(function () {
+    $scope.searchForMore = function () {
         if(!$scope.working) executeSearch();
-    }, 200, true);
+    };
 
     function Initializer(args) {
         this.execute = function () {
