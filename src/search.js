@@ -1,5 +1,6 @@
 angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
-    .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', BinartaSearchController]);
+    .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', BinartaSearchController])
+    .controller('BinartaEntityController', ['$scope', '$routeParams', 'restServiceHandler', 'config', BinartaEntityController]);
 
 function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher) {
     $scope.$on('$routeUpdate', function() {
@@ -8,7 +9,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
 
     function exposeViewMode(mode) {
         $scope.viewMode = mode;
-        if(mode) $location.search().viewMode = mode;
+        if (mode) $location.search().viewMode = mode;
     }
 
     var request = usecaseAdapterFactory($scope);
@@ -131,5 +132,25 @@ function RedirectToSearchController($scope, $location) {
 
     function localizedPrefix() {
         return $scope.locale != null ? '/' + $scope.locale : ''
+    }
+}
+
+function BinartaEntityController($scope, $routeParams, restServiceHandler, config) {
+    $scope.init = function (args) {
+        restServiceHandler({
+            params: {
+                method: 'GET',
+                url: config.baseUri + 'api/entity/' + args.entity,
+                params: {
+                    namespace: config.namespace,
+                    id: $routeParams.id,
+                    treatInputAsId: true
+                },
+                withCredentials: true
+            },
+            success:function(entity) {
+                $scope[args.var || 'entity'] = entity;
+            }
+        });
     }
 }

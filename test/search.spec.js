@@ -1,9 +1,10 @@
 describe('search.js', function() {
-    var ctrl, $scope, rest, topics, dispatcher;
+    var ctrl, $scope, rest, topics, dispatcher, $routeParams;
 
     beforeEach(module('binarta.search'));
     beforeEach(inject(function($rootScope, restServiceHandler, config, topicRegistryMock, topicMessageDispatcherMock) {
         $scope = $rootScope.$new();
+        $routeParams = {};
         rest = restServiceHandler;
         topics = topicRegistryMock;
         dispatcher = topicMessageDispatcherMock;
@@ -273,6 +274,44 @@ describe('search.js', function() {
                         expect($location.path()).toEqual('/page/');
                     }));
                 });
+            });
+        });
+    });
+
+    describe('BinartaEntityController', function() {
+        beforeEach(inject(function($controller) {
+            ctrl = $controller(BinartaEntityController, {$scope:$scope, $routeParams:$routeParams});
+        }));
+
+        describe('given id', function() {
+            beforeEach(function() {
+                $routeParams.id = 'id';
+            });
+
+            describe('on init', function() {
+                beforeEach(function() {
+                    $scope.init({
+                        entity:'E'
+                    });
+                });
+
+                it('fetch entity from server', function() {
+                    expect(request().params.method).toEqual('GET');
+                    expect(request().params.url).toEqual('http://host/api/entity/E');
+                    expect(request().params.params).toEqual({namespace:'N', id:'id', treatInputAsId:true});
+                    expect(request().params.withCredentials).toBeTruthy();
+                });
+
+                it('expose entity on scope', function() {
+                    request().success('result');
+                    expect($scope.entity).toEqual('result');
+                });
+            });
+
+            it('named entity variable', function() {
+                $scope.init({var:'custom'});
+                request().success('result');
+                expect($scope.custom).toEqual('result');
             });
         });
     });
