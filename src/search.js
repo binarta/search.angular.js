@@ -1,10 +1,10 @@
 angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
     .provider('binartaEntityDecorators', BinartaEntityDecoratorsFactory)
     .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', BinartaSearchController])
-    .controller('BinartaEntityController', ['$scope', '$routeParams', 'restServiceHandler', 'config', 'binartaEntityDecorators', BinartaEntityController]);
+    .controller('BinartaEntityController', ['$scope', '$routeParams', 'restServiceHandler', 'config', BinartaEntityController]);
 
 function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher) {
-    $scope.$on('$routeUpdate', function () {
+    $scope.$on('$routeUpdate', function() {
         exposeViewMode($location.search().viewMode);
     });
 
@@ -15,7 +15,11 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
 
     var request = usecaseAdapterFactory($scope);
 
+    $scope.searchForMoreLock = true;
+
     $scope.init = function (args) {
+        $scope.decorator = args.decorator;
+        $scope.filtersCustomizer = args.filtersCustomizer;
         new Initializer(args).execute();
     };
 
@@ -30,13 +34,15 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
                     it[key] = args[key];
                 });
             };
+            if ($scope.decorator) $scope.decorator(it);
             $scope.results.push(it);
         });
         if ($scope.results.length > 0 && results.length == 0)
             topicMessageDispatcher.fire('system.info', {
                 code: 'no.more.results.found',
                 default: 'No more results found.'
-            });
+        });
+        $scope.searchForMoreLock = false;
     }
 
     function incrementOffset(count) {
@@ -51,14 +57,19 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     }
 
     $scope.search = function () {
+        $scope.searchForMoreLock = true;
         reset();
         executeSearch();
     };
 
     function executeSearch() {
-        applyCustomFilters();
-        applySearchQueryFilter();
-        restServiceHandler(request);
+        var applyFiltersAndSendRequest = function() {
+            applyCustomFilters();
+            applySearchQueryFilter();
+            restServiceHandler(request);
+        };
+        if ($scope.filtersCustomizer) $scope.filtersCustomizer({filters:$scope.filters, subset:request.params.data.args.subset}).then(applyFiltersAndSendRequest, applyFiltersAndSendRequest);
+        else applyFiltersAndSendRequest();
     }
 
     function applyCustomFilters() {
@@ -74,7 +85,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     }
 
     $scope.searchForMore = function () {
-        if (!$scope.working) executeSearch();
+        if(!$scope.working && !$scope.searchForMoreLock) executeSearch();
     };
 
     function Initializer(args) {
@@ -111,7 +122,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
                 topic: 'i18n.locale',
                 handler: function (locale) {
                     request.params.headers = {'Accept-Language': locale};
-                    if (args.autosearch) ngRegisterTopicHandler($scope, 'app.start', callback);
+                    if (args.autosearch) callback();
                 },
                 executeHandlerOnce: true
             });

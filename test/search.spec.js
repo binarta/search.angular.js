@@ -47,15 +47,56 @@ describe('search.js', function () {
                         expect(topics['app.start']).toBeUndefined();
                     }));
                 });
+
+                describe('when calling search for more before search', function() {
+                    it('then no request is sent', function() {
+                        $scope.searchForMore();
+                        expect(rest.calls[0]).toBeUndefined();
+                    });
+
+                    describe('and search and search more are called', function() {
+                        beforeEach(function() {
+                            $scope.search();
+                            request().success(['R']);
+                            rest.reset();
+                            $scope.searchForMore();
+                        });
+
+                        it('then search for more was called', function() {
+                            expect(request()).toBeDefined();
+                        });
+
+                        describe('and search is called again', function() {
+                            beforeEach(function() {
+                                request().success([]);
+                                $scope.search();
+                            });
+
+                            describe('and before response we call search more', function() {
+                                beforeEach(function() {
+                                    rest.reset();
+                                    $scope.searchForMore();
+                                });
+
+                                it('then search for more is not executed', function() {
+                                    expect(rest.calls[0]).toBeUndefined();
+                                })
+                            });
+                        })
+                    });
+                })
             });
 
             describe('with autosearch', function () {
                 beforeEach(function () {
                     $scope.init({
-                        entity: 'E',
-                        context: 'C',
-                        filters: {customField: 'F'},
-                        autosearch: true
+                        entity:'E',
+                        context:'C',
+                        filters:{customField:'F'},
+                        autosearch:true,
+                        decorator: function(it) {
+                            it.decorated = true;
+                        }
                     });
                 });
 
@@ -64,12 +105,7 @@ describe('search.js', function () {
                         topics['i18n.locale']('en');
                     });
 
-                    it('and app start selected do search', function () {
-                        topics['app.start']();
-                        expect(request()).toBeDefined();
-                    });
-
-                    it('and search do rest call', function () {
+                    it('and search do rest call', function() {
                         $scope.search();
                         expect(request().params.method).toEqual('POST');
                         expect(request().params.url).toEqual('http://host/api/query/E/C');
@@ -91,13 +127,50 @@ describe('search.js', function () {
                         expect(request().params.data.args.anotherFilter).toEqual('X');
                     });
 
-                    describe('and with search results', function () {
+                    describe('with filters customizer', function() {
+                        var success;
+
+                        beforeEach(function() {
+                            topics = {};
+                            success = true;
+                            rest.reset();
+                            $scope.init({
+                                entity:'E',
+                                context:'C',
+                                filters:{customField:'F'},
+                                filtersCustomizer: function(args) {
+                                    args.filters.customized = true;
+                                    args.filters.offset = args.subset.offset;
+                                    args.filters.count = args.subset.count;
+                                    return {
+                                        then: function(s, e) {
+                                            success ? s() : e();
+                                        }
+                                    }
+                                }
+                            });
+                        });
+
+                        it('with customizer success', function() {
+                            $scope.search();
+                            expect(request().params.data.args.customized).toBeTruthy();
+                            expect(request().params.data.args.count).toEqual(request().params.data.args.subset.count);
+                            expect(request().params.data.args.offset).toEqual(request().params.data.args.subset.offset);
+                        });
+
+                        it('with customizer failure', function() {
+                            success = false;
+                            $scope.search();
+                            expect(request().params.data.args.customized).toBeTruthy();
+                        })
+                    });
+
+                    describe('and with search results', function() {
                         var results;
 
-                        beforeEach(function () {
-                            results = [
-                                {name: 'item-1'}
-                            ];
+                        beforeEach(function() {
+                            results = [{name:'item-1'}];
+
                             $scope.search();
                             request().success(results);
                         });
@@ -121,8 +194,12 @@ describe('search.js', function () {
                             expect(results[0].name).toEqual('item-1-alt');
                         }));
 
-                        describe('when searching for more', function () {
-                            beforeEach(function () {
+                        it('results can be decorated', function() {
+                            expect(results[0].decorated).toBeTruthy();
+                        });
+
+                        describe('when searching for more', function() {
+                            beforeEach(function() {
                                 rest.reset();
                                 $scope.searchForMore();
                             });
