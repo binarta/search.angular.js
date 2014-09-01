@@ -1,7 +1,7 @@
 angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
     .provider('binartaEntityDecorators', BinartaEntityDecoratorsFactory)
     .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', BinartaSearchController])
-    .controller('BinartaEntityController', ['$scope', '$routeParams', 'restServiceHandler', 'config', BinartaEntityController]);
+    .controller('BinartaEntityController', ['$scope', '$routeParams', 'restServiceHandler', 'config', 'binartaEntityDecorators', BinartaEntityController]);
 
 function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher) {
     $scope.$on('$routeUpdate', function() {
