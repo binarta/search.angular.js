@@ -1,8 +1,9 @@
-describe('search.js', function() {
+describe('search.js', function () {
     var ctrl, $scope, rest, topics, dispatcher, $routeParams;
 
     beforeEach(module('binarta.search'));
-    beforeEach(inject(function($rootScope, restServiceHandler, config, topicRegistryMock, topicMessageDispatcherMock) {
+    beforeEach(module('test.app'));
+    beforeEach(inject(function ($rootScope, restServiceHandler, config, topicRegistryMock, topicMessageDispatcherMock) {
         $scope = $rootScope.$new();
         $routeParams = {};
         rest = restServiceHandler;
@@ -16,156 +17,158 @@ describe('search.js', function() {
         return rest.calls[0].args[0];
     }
 
-    describe('BinartaSearchController', function() {
-        beforeEach(inject(function($controller) {
-            ctrl = $controller(BinartaSearchController, {$scope:$scope});
+    describe('BinartaSearchController', function () {
+        beforeEach(inject(function ($controller) {
+            ctrl = $controller(BinartaSearchController, {$scope: $scope});
         }));
 
-        describe('on init', function() {
-            describe('without autosearch', function() {
-                beforeEach(function() {
+        describe('on init', function () {
+            describe('without autosearch', function () {
+                beforeEach(function () {
                     $scope.init({
-                        entity:'E',
-                        context:'C',
-                        filters:{customField:'F'}
+                        entity: 'E',
+                        context: 'C',
+                        filters: {customField: 'F'}
                     });
                 });
 
-                it('and query parameter is provided', inject(function($location) {
+                it('and query parameter is provided', inject(function ($location) {
                     $location.search('q', 'text');
                     $scope.init({});
                     expect($scope.q).toEqual('text');
                 }));
 
-                describe('and locale selected', function() {
-                    beforeEach(function() {
+                describe('and locale selected', function () {
+                    beforeEach(function () {
                         topics['i18n.locale']('en');
                     });
 
-                    it('no events are registered with app.start', inject(function() {
+                    it('no events are registered with app.start', inject(function () {
                         expect(topics['app.start']).toBeUndefined();
                     }));
                 });
             });
 
-            describe('with autosearch', function() {
-                beforeEach(function() {
+            describe('with autosearch', function () {
+                beforeEach(function () {
                     $scope.init({
-                        entity:'E',
-                        context:'C',
-                        filters:{customField:'F'},
-                        autosearch:true
+                        entity: 'E',
+                        context: 'C',
+                        filters: {customField: 'F'},
+                        autosearch: true
                     });
                 });
 
-                describe('and locale selected', function() {
-                    beforeEach(function() {
+                describe('and locale selected', function () {
+                    beforeEach(function () {
                         topics['i18n.locale']('en');
                     });
 
-                    it('and app start selected do search', function() {
+                    it('and app start selected do search', function () {
                         topics['app.start']();
                         expect(request()).toBeDefined();
                     });
 
-                    it('and search do rest call', function() {
+                    it('and search do rest call', function () {
                         $scope.search();
                         expect(request().params.method).toEqual('POST');
                         expect(request().params.url).toEqual('http://host/api/query/E/C');
-                        expect(request().params.data.args).toEqual({namespace:'N', customField:'F', subset:{offset:0, count:10}});
+                        expect(request().params.data.args).toEqual({namespace: 'N', customField: 'F', subset: {offset: 0, count: 10}});
                         expect(request().params.headers['Accept-Language']).toEqual('en');
                         expect(request().params.withCredentials).toBeTruthy();
                     });
 
-                    it('and search with query string', inject(function($location) {
+                    it('and search with query string', inject(function ($location) {
                         $scope.q = 'query-string';
                         $scope.search();
                         expect(request().params.data.args.q).toEqual($scope.q);
-                        expect($location.search()).toEqual({q:'query-string'});
+                        expect($location.search()).toEqual({q: 'query-string'});
                     }));
 
-                    it('and search with custom filters defined through $scope', function() {
+                    it('and search with custom filters defined through $scope', function () {
                         $scope.filters.anotherFilter = 'X';
                         $scope.search();
                         expect(request().params.data.args.anotherFilter).toEqual('X');
                     });
 
-                    describe('and with search results', function() {
+                    describe('and with search results', function () {
                         var results;
 
-                        beforeEach(function() {
-                            results = [{name:'item-1'}];
+                        beforeEach(function () {
+                            results = [
+                                {name: 'item-1'}
+                            ];
                             $scope.search();
                             request().success(results);
                         });
 
-                        it('exposed on scope', function() {
+                        it('exposed on scope', function () {
                             expect($scope.results).toEqual(results);
                         });
 
-                        it('subsequent searches reset results', function() {
+                        it('subsequent searches reset results', function () {
                             $scope.search();
                             expect($scope.results).toEqual([]);
                         });
 
-                        it('search results can be removed from the view', function() {
+                        it('search results can be removed from the view', function () {
                             results[0].remove();
                             expect($scope.results).toEqual([]);
                         });
 
-                        it('search results can be updated', inject(function() {
-                            results[0].update({name:'item-1-alt'});
+                        it('search results can be updated', inject(function () {
+                            results[0].update({name: 'item-1-alt'});
                             expect(results[0].name).toEqual('item-1-alt');
                         }));
 
-                        describe('when searching for more', function() {
-                            beforeEach(function() {
+                        describe('when searching for more', function () {
+                            beforeEach(function () {
                                 rest.reset();
                                 $scope.searchForMore();
                             });
 
-                            it('increment offset with count', function() {
-                                expect(request().params.data.args.subset).toEqual({offset:1, count:10});
+                            it('increment offset with count', function () {
+                                expect(request().params.data.args.subset).toEqual({offset: 1, count: 10});
                             });
 
-                            it('new searches reset the offset', function() {
+                            it('new searches reset the offset', function () {
                                 $scope.search();
-                                expect(request().params.data.args.subset).toEqual({offset:0, count:10});
+                                expect(request().params.data.args.subset).toEqual({offset: 0, count: 10});
                             });
 
-                            describe('and more results found', function() {
-                                beforeEach(function() {
+                            describe('and more results found', function () {
+                                beforeEach(function () {
                                     request().success(results);
                                 });
 
-                                it('append to search results', function() {
+                                it('append to search results', function () {
                                     expect($scope.results.length).toEqual(2);
                                 });
 
-                                describe('and searching for more', function() {
-                                    beforeEach(function() {
+                                describe('and searching for more', function () {
+                                    beforeEach(function () {
                                         rest.reset();
                                         $scope.searchForMore();
                                     });
 
-                                    it('increment offset with count', function() {
-                                        expect(request().params.data.args.subset).toEqual({offset:2, count:10});
+                                    it('increment offset with count', function () {
+                                        expect(request().params.data.args.subset).toEqual({offset: 2, count: 10});
                                     });
                                 });
                             });
 
-                            describe('and searching for more', function() {
-                                beforeEach(function() {
+                            describe('and searching for more', function () {
+                                beforeEach(function () {
                                     request().success([]);
                                     rest.reset();
                                 });
 
-                                it('increment offset with count', function() {
+                                it('increment offset with count', function () {
                                     $scope.searchForMore();
-                                    expect(request().params.data.args.subset).toEqual({offset:1, count:10});
+                                    expect(request().params.data.args.subset).toEqual({offset: 1, count: 10});
                                 });
 
-                                it('only search for more when not working', function() {
+                                it('only search for more when not working', function () {
                                     $scope.working = true;
                                     $scope.searchForMore();
                                     expect(rest.calls[0]).toBeUndefined();
@@ -173,7 +176,7 @@ describe('search.js', function() {
                             });
 
                             describe('when no more are found', function () {
-                                beforeEach(function() {
+                                beforeEach(function () {
                                     request().success([]);
                                 });
 
@@ -200,39 +203,39 @@ describe('search.js', function() {
                 })
             });
 
-            it('do not subscribe for end of page events when not enabled', function() {
+            it('do not subscribe for end of page events when not enabled', function () {
                 $scope.init({});
                 expect(topics['end.of.page']).toBeUndefined();
             });
 
-            it('a custom page size can be specified on init', function() {
-                $scope.init({subset:{count:5}});
+            it('a custom page size can be specified on init', function () {
+                $scope.init({subset: {count: 5}});
                 $scope.search();
-                expect(request().params.data.args).toEqual({namespace:'N', subset:{offset:0, count:5}});
+                expect(request().params.data.args).toEqual({namespace: 'N', subset: {offset: 0, count: 5}});
             });
 
-            describe('view mode', function() {
-                it('defaults to undefined', inject(function($location) {
+            describe('view mode', function () {
+                it('defaults to undefined', inject(function ($location) {
                     $scope.init({});
                     expect($scope.viewMode).toBeUndefined();
                     expect($location.search().viewMode).toBeUndefined();
                 }));
 
-                it('can be specified and exposed on scope', inject(function($location) {
-                    $scope.init({viewMode:'x'});
+                it('can be specified and exposed on scope', inject(function ($location) {
+                    $scope.init({viewMode: 'x'});
                     expect($scope.viewMode).toEqual('x');
                     expect($location.search().viewMode).toEqual('x');
                 }));
 
-                it('view mode specified on $location overrides init', inject(function($location) {
+                it('view mode specified on $location overrides init', inject(function ($location) {
                     $location.search().viewMode = 'x';
-                    $scope.init({viewMode:'y'});
+                    $scope.init({viewMode: 'y'});
                     expect($scope.viewMode).toEqual('x');
                     expect($location.search().viewMode).toEqual('x');
                 }));
 
-                it('on $routeUpdate adjust view mode on $scope', inject(function($location) {
-                    $scope.init({viewMode:'x'});
+                it('on $routeUpdate adjust view mode on $scope', inject(function ($location) {
+                    $scope.init({viewMode: 'x'});
                     $location.search().viewMode = 'y';
                     $scope.$broadcast('$routeUpdate');
                     expect($scope.viewMode).toEqual('y');
@@ -242,34 +245,34 @@ describe('search.js', function() {
         });
     });
 
-    describe('RedirectToSearchController', function() {
-        beforeEach(inject(function($controller) {
-            ctrl = $controller(RedirectToSearchController, {$scope:$scope});
+    describe('RedirectToSearchController', function () {
+        beforeEach(inject(function ($controller) {
+            ctrl = $controller(RedirectToSearchController, {$scope: $scope});
         }));
 
-        describe('on init', function() {
-            beforeEach(function() {
-                $scope.init({page:'/page/'});
+        describe('on init', function () {
+            beforeEach(function () {
+                $scope.init({page: '/page/'});
             });
 
-            describe('and submit', function() {
-                beforeEach(function() {
+            describe('and submit', function () {
+                beforeEach(function () {
                     $scope.q = 'text';
                     $scope.locale = 'locale';
                     $scope.submit();
                 });
 
-                it('then redirect to configured path with embedded query string', inject(function($location) {
+                it('then redirect to configured path with embedded query string', inject(function ($location) {
                     expect($location.search().q).toEqual($scope.q);
                     expect($location.path()).toEqual('/locale/page/');
                 }));
 
-                describe('without locale', function() {
-                    beforeEach(function() {
+                describe('without locale', function () {
+                    beforeEach(function () {
                         $scope.locale = undefined;
                     });
 
-                    it('test', inject(function($location) {
+                    it('test', inject(function ($location) {
                         $scope.submit();
                         expect($location.path()).toEqual('/page/');
                     }));
@@ -278,41 +281,60 @@ describe('search.js', function() {
         });
     });
 
-    describe('BinartaEntityController', function() {
-        beforeEach(inject(function($controller) {
-            ctrl = $controller(BinartaEntityController, {$scope:$scope, $routeParams:$routeParams});
+    describe('BinartaEntityController', function () {
+        beforeEach(inject(function ($controller) {
+            ctrl = $controller(BinartaEntityController, {$scope: $scope, $routeParams: $routeParams});
         }));
 
-        describe('given id', function() {
-            beforeEach(function() {
+        describe('given id', function () {
+            beforeEach(function () {
                 $routeParams.id = 'id';
             });
 
-            describe('on init', function() {
-                beforeEach(function() {
+            describe('on init', function () {
+                beforeEach(function () {
                     $scope.init({
-                        entity:'E'
+                        entity: 'E'
                     });
                 });
 
-                it('fetch entity from server', function() {
+                it('fetch entity from server', function () {
                     expect(request().params.method).toEqual('GET');
                     expect(request().params.url).toEqual('http://host/api/entity/E');
-                    expect(request().params.params).toEqual({namespace:'N', id:'id', treatInputAsId:true});
+                    expect(request().params.params).toEqual({namespace: 'N', id: 'id', treatInputAsId: true});
                     expect(request().params.withCredentials).toBeTruthy();
                 });
 
-                it('expose entity on scope', function() {
+                it('expose entity on scope', function () {
                     request().success('result');
                     expect($scope.entity).toEqual('result');
                 });
             });
 
-            it('named entity variable', function() {
-                $scope.init({var:'custom'});
+            it('named entity variable', function () {
+                $scope.init({var: 'custom'});
                 request().success('result');
                 expect($scope.custom).toEqual('result');
+            });
+
+            it('decorate entity', function () {
+                $scope.init({entity: 'decorated-entity'});
+                request().success({msg: 'result'});
+                expect($scope.entity.msg).toEqual('result');
+                expect($scope.entity.decoratedMsg).toEqual('decorated result');
             });
         });
     });
 });
+
+angular.module('test.app', ['binarta.search'])
+    .config(['binartaEntityDecoratorsProvider', function (binartaEntityDecoratorsProvider) {
+        binartaEntityDecoratorsProvider.add({
+            entity: 'decorated-entity',
+            action: 'view',
+            mapper: function (it) {
+                it.decoratedMsg = 'decorated ' + it.msg;
+                return it;
+            }
+        });
+    }]);

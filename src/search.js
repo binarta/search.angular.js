@@ -1,9 +1,10 @@
 angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
+    .provider('binartaEntityDecorators', BinartaEntityDecoratorsFactory)
     .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', BinartaSearchController])
-    .controller('BinartaEntityController', ['$scope', '$routeParams', 'restServiceHandler', 'config', BinartaEntityController]);
+    .controller('BinartaEntityController', ['$scope', '$routeParams', 'restServiceHandler', 'config', 'binartaEntityDecorators', BinartaEntityController]);
 
 function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher) {
-    $scope.$on('$routeUpdate', function() {
+    $scope.$on('$routeUpdate', function () {
         exposeViewMode($location.search().viewMode);
     });
 
@@ -73,7 +74,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     }
 
     $scope.searchForMore = function () {
-        if(!$scope.working) executeSearch();
+        if (!$scope.working) executeSearch();
     };
 
     function Initializer(args) {
@@ -135,7 +136,7 @@ function RedirectToSearchController($scope, $location) {
     }
 }
 
-function BinartaEntityController($scope, $routeParams, restServiceHandler, config) {
+function BinartaEntityController($scope, $routeParams, restServiceHandler, config, binartaEntityDecorators) {
     $scope.init = function (args) {
         restServiceHandler({
             params: {
@@ -148,9 +149,22 @@ function BinartaEntityController($scope, $routeParams, restServiceHandler, confi
                 },
                 withCredentials: true
             },
-            success:function(entity) {
-                $scope[args.var || 'entity'] = entity;
+            success: function (entity) {
+                var decorator = binartaEntityDecorators[args.entity + '.view'];
+                $scope[args.var || 'entity'] = decorator ? decorator(entity) : entity;
             }
         });
+    }
+}
+
+function BinartaEntityDecoratorsFactory() {
+    var decorators = {};
+    return {
+        add: function (args) {
+            decorators[args.entity + '.' + args.action] = args.mapper;
+        },
+        $get: function () {
+            return decorators;
+        }
     }
 }
