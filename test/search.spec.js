@@ -319,6 +319,12 @@ describe('search.js', function () {
                 expect(request().params.data.args.field).toEqual('decorated msg');
             });
 
+            it('decorating on init filters does not affect source', function () {
+                $scope.init({entity: 'decorated-entity', context: 'action', filters: {field: 'msg'}});
+                $scope.search();
+                expect($scope.filters.field).toEqual('msg');
+            });
+
             describe('view mode', function () {
                 it('defaults to undefined', inject(function ($location) {
                     $scope.init({});
