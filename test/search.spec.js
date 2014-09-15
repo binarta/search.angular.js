@@ -194,8 +194,16 @@ describe('search.js', function () {
                             expect(results[0].name).toEqual('item-1-alt');
                         }));
 
-                        it('results can be decorated', function() {
+                        it('results can be decorated with decorator on parent scope', function() {
                             expect(results[0].decorated).toBeTruthy();
+                        });
+
+                        it('results can be decorated with decorator provider', function () {
+                            $scope.init({entity: 'decorated-entity', context:'view'});
+                            $scope.search();
+                            request().success([{msg:'result'}]);
+                            expect($scope.results[0].msg).toEqual('result');
+                            expect($scope.results[0].decoratedMsg).toEqual('decorated result');
                         });
 
                         describe('when searching for more', function() {

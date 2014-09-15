@@ -1,10 +1,12 @@
 angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
     .provider('binartaEntityDecorators', BinartaEntityDecoratorsFactory)
-    .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', BinartaSearchController])
+    .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaEntityDecorators', BinartaSearchController])
     .controller('BinartaEntityController', ['$scope', '$routeParams', 'restServiceHandler', 'config', 'binartaEntityDecorators', BinartaEntityController]);
 
-function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher) {
-    $scope.$on('$routeUpdate', function() {
+function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher, binartaEntityDecorators) {
+    var self = this;
+
+    $scope.$on('$routeUpdate', function () {
         exposeViewMode($location.search().viewMode);
     });
 
@@ -18,6 +20,8 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     $scope.searchForMoreLock = true;
 
     $scope.init = function (args) {
+        self.entity = args.entity;
+        self.action = args.context;
         $scope.decorator = args.decorator;
         $scope.filtersCustomizer = args.filtersCustomizer;
         new Initializer(args).execute();
@@ -26,6 +30,8 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     function exposeSearchResultsOnScope(results) {
         if (results.length > 0) incrementOffset(results.length);
         results.forEach(function (it) {
+            var decorator = binartaEntityDecorators[self.entity + '.' + self.action];
+            it = decorator ? decorator(it) : it;
             it.remove = function () {
                 $scope.results.splice($scope.results.indexOf(it), 1);
             };
@@ -41,7 +47,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
             topicMessageDispatcher.fire('system.info', {
                 code: 'no.more.results.found',
                 default: 'No more results found.'
-        });
+            });
         $scope.searchForMoreLock = false;
     }
 
@@ -63,12 +69,12 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     };
 
     function executeSearch() {
-        var applyFiltersAndSendRequest = function() {
+        var applyFiltersAndSendRequest = function () {
             applyCustomFilters();
             applySearchQueryFilter();
             restServiceHandler(request);
         };
-        if ($scope.filtersCustomizer) $scope.filtersCustomizer({filters:$scope.filters, subset:request.params.data.args.subset}).then(applyFiltersAndSendRequest, applyFiltersAndSendRequest);
+        if ($scope.filtersCustomizer) $scope.filtersCustomizer({filters: $scope.filters, subset: request.params.data.args.subset}).then(applyFiltersAndSendRequest, applyFiltersAndSendRequest);
         else applyFiltersAndSendRequest();
     }
 
@@ -85,7 +91,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     }
 
     $scope.searchForMore = function () {
-        if(!$scope.working && !$scope.searchForMoreLock) executeSearch();
+        if (!$scope.working && !$scope.searchForMoreLock) executeSearch();
     };
 
     function Initializer(args) {
