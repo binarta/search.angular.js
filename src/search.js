@@ -80,7 +80,8 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     }
 
     function applyCustomFilters() {
-        if ($scope.filters) Object.keys($scope.filters).reduce(function (p, c) {
+        var decorator = binartaEntityDecorators[self.entity + '.' + self.action + '.request'];
+        if ($scope.filters) Object.keys(decorator ? decorator($scope.filters) : $scope.filters).reduce(function (p, c) {
             p[c] = $scope.filters[c];
             return p;
         }, request.params.data.args);
