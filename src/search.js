@@ -71,6 +71,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     function executeSearch() {
         var applyFiltersAndSendRequest = function () {
             applyCustomFilters();
+            applyCustomSortings();
             applySearchQueryFilter();
             restServiceHandler(request);
         };
@@ -85,6 +86,10 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
         }, request.params.data.args);
     }
 
+    function applyCustomSortings() {
+        if($scope.sortings) request.params.data.args.sortings = $scope.sortings;
+    }
+
     function applySearchQueryFilter() {
         request.params.data.args.q = $scope.q;
         $location.search('q', $scope.q);
@@ -97,6 +102,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
     function Initializer(args) {
         this.execute = function () {
             exposeFiltersOnScope();
+            exposeSortingsOnScope();
             exposeViewMode($location.search().viewMode ? $location.search().viewMode : args.viewMode);
             if (args.subset && args.subset.count) defaultSubset.count = args.subset.count;
             extractSearchTextFromUrl();
@@ -106,6 +112,10 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
 
         function exposeFiltersOnScope() {
             $scope.filters = args.filters;
+        }
+
+        function exposeSortingsOnScope() {
+            if(args.sortings) $scope.sortings = args.sortings;
         }
 
         function extractSearchTextFromUrl() {

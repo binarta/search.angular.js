@@ -299,6 +299,12 @@ describe('search.js', function () {
                 expect(request().params.data.args).toEqual({namespace: 'N', subset: {offset: 0, count: 5}});
             });
 
+            it('a custom sorting can be specified on init', function () {
+                $scope.init({sortings: [{on:'field', orientation:'asc'}]});
+                $scope.search();
+                expect(request().params.data.args.sortings).toEqual([{on:'field', orientation:'asc'}]);
+            });
+
             describe('view mode', function () {
                 it('defaults to undefined', inject(function ($location) {
                     $scope.init({});
