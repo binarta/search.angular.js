@@ -420,6 +420,24 @@ describe('search.js', function () {
                     request().success('result');
                     expect($scope.entity).toEqual('result');
                 });
+
+                describe('and refresh', function() {
+                    beforeEach(function() {
+                        $scope.refresh();
+                    });
+
+                    it('fetch entity from server', function () {
+                        expect(request().params.method).toEqual('GET');
+                        expect(request().params.url).toEqual('http://host/api/entity/E');
+                        expect(request().params.params).toEqual({namespace: 'N', id: 'id', treatInputAsId: true});
+                        expect(request().params.withCredentials).toBeTruthy();
+                    });
+
+                    it('expose entity on scope', function () {
+                        request().success('result');
+                        expect($scope.entity).toEqual('result');
+                    });
+                });
             });
 
             it('named entity variable', function () {

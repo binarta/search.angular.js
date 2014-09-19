@@ -170,6 +170,7 @@ function RedirectToSearchController($scope, $location) {
 
 function BinartaEntityController($scope, $routeParams, restServiceHandler, config, binartaEntityDecorators) {
     $scope.init = function (args) {
+        $scope.refresh = function() {$scope.init(args)};
         restServiceHandler({
             params: {
                 method: 'GET',
