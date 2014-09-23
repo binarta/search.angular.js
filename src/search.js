@@ -1,7 +1,7 @@
 angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
     .provider('binartaEntityDecorators', BinartaEntityDecoratorsFactory)
     .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaEntityDecorators', BinartaSearchController])
-    .controller('BinartaEntityController', ['$scope', '$routeParams', 'restServiceHandler', 'config', 'binartaEntityDecorators', BinartaEntityController]);
+    .controller('BinartaEntityController', ['$scope', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', BinartaEntityController]);
 
 function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher, binartaEntityDecorators) {
     var self = this;
@@ -168,25 +168,74 @@ function RedirectToSearchController($scope, $location) {
     }
 }
 
-function BinartaEntityController($scope, $routeParams, restServiceHandler, config, binartaEntityDecorators) {
-    $scope.init = function (args) {
-        $scope.refresh = function() {$scope.init(args)};
+function BinartaEntityController($scope, $routeParams, restServiceHandler, usecaseAdapterFactory, config, binartaEntityDecorators) {
+    var self = this;
+
+    function setEntity(entity) {
+        $scope[self.ctx.var || 'entity'] = entity;
+    }
+
+    function getEntity() {
+        return $scope[self.ctx.var || 'entity'];
+    }
+
+    $scope.clear = function() {
+        var entity = {namespace:config.namespace};
+        if(self.ctx.mask) Object.keys(self.ctx.mask).reduce(function (p, c) {
+            p[c] = self.ctx.mask[c];
+            return p;
+        }, entity);
+        setEntity(entity);
+    };
+
+    function fetch(args) {
         restServiceHandler({
             params: {
                 method: 'GET',
-                url: config.baseUri + 'api/entity/' + args.entity,
+                url: config.baseUri + 'api/entity/' + self.ctx.entity,
                 params: {
                     namespace: config.namespace,
-                    id: $routeParams.id,
+                    id: args.id,
                     treatInputAsId: true
                 },
                 withCredentials: true
             },
             success: function (entity) {
-                var decorator = binartaEntityDecorators[args.entity + '.view'];
-                $scope[args.var || 'entity'] = decorator ? decorator(entity) : entity;
+                var decorator = binartaEntityDecorators[self.ctx.entity + '.view'];
+                setEntity(decorator ? decorator(entity) : entity);
             }
         });
+    }
+
+    $scope.init = function (args) {
+        self.ctx = args;
+        $scope.refresh = function() {$scope.init(args)};
+        fetch({id:$routeParams.id});
+    };
+
+    $scope.forCreate = function(args) {
+        self.ctx = args;
+        $scope.clear();
+    };
+
+    $scope.create = function() {
+        var decorator = binartaEntityDecorators[self.ctx.entity + '.add'];
+        var request = usecaseAdapterFactory($scope);
+        request.params = {
+            method: 'PUT',
+            url: config.baseUri + 'api/entity/' + self.ctx.entity,
+            data: decorator ? decorator(getEntity()) : getEntity(),
+            withCredentials: true
+        };
+        request.success = function(it) {
+            $scope.edit(it);
+            if(self.ctx.onSuccess) self.ctx.onSuccess();
+        };
+        restServiceHandler(request);
+    };
+
+    $scope.edit = function(args) {
+        fetch({id:args.id});
     }
 }
 

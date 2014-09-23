@@ -13,8 +13,9 @@ describe('search.js', function () {
         config.baseUri = 'http://host/';
     }));
 
-    function request() {
-        return rest.calls[0].args[0];
+    function request(idx) {
+        if(!idx) idx = 0;
+        return rest.calls[idx].args[0];
     }
 
     describe('BinartaSearchController', function () {
@@ -452,6 +453,90 @@ describe('search.js', function () {
                 expect($scope.entity.msg).toEqual('result');
                 expect($scope.entity.decoratedMsg).toEqual('decorated result');
             });
+        });
+
+        describe('for create', function() {
+            beforeEach(function() {
+                $scope.forCreate({entity:'E'});
+            });
+
+            it('exposes entity on scope', function() {
+                $scope.forCreate({});
+                expect($scope.entity).toEqual({namespace: 'N'});
+            });
+
+            it('on clear resets scoped entity', function() {
+                $scope.entity.field = 'value';
+                $scope.clear();
+                expect($scope.entity).toEqual({namespace:'N'});
+            });
+
+            describe('on submit', function() {
+                beforeEach(function() {
+                    $scope.create();
+                });
+
+                it('and submit', function() {
+                    expect(request().params.method).toEqual('PUT');
+                    expect(request().params.url).toEqual('http://host/api/entity/E');
+                    expect(request().params.data).toEqual({namespace: 'N'});
+                    expect(request().params.withCredentials).toBeTruthy();
+                });
+
+                it('and success', function() {
+                    request().success({id:'id'});
+                    expect(request(1).params.method).toEqual('GET');
+                    expect(request(1).params.params).toEqual({namespace: 'N', id: 'id', treatInputAsId: true});
+                });
+            });
+
+            describe('on edit', function() {
+                beforeEach(function() {
+                    $scope.entity.field = 'value';
+                    $scope.edit({id:'id'});
+                });
+
+                it('expose entity', function() {
+                    request().success({id:'id'});
+                    expect($scope.entity).toEqual({id:'id'});
+                });
+
+                it('lookup entity', function() {
+                    expect(request().params.method).toEqual('GET');
+                    expect(request().params.url).toEqual('http://host/api/entity/E');
+                    expect(request().params.params).toEqual({namespace: 'N', id: 'id', treatInputAsId: true});
+                    expect(request().params.withCredentials).toBeTruthy();
+                });
+            });
+        });
+
+        it('create with mask', function() {
+            $scope.forCreate({mask:{field:'value'}});
+            $scope.create();
+            expect(request().params.data).toEqual({namespace: 'N', field:'value'});
+        });
+
+        describe('for create with var', function() {
+            beforeEach(function() {
+                $scope.forCreate({var:'v'});
+            });
+
+            it('exposes entity on scope', function() {
+                expect($scope.v).toEqual({namespace: 'N'});
+            });
+
+            it('and submit', function() {
+                $scope.create();
+                expect(request().params.data).toEqual({namespace: 'N'});
+            });
+        });
+
+        it('create with on success handler', function() {
+            var executed = false;
+            $scope.forCreate({onSuccess:function() {executed = true;}});
+            $scope.create();
+            request().success({});
+            expect(executed).toEqual(true);
         });
     });
 });
