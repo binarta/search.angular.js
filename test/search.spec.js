@@ -24,6 +24,12 @@ describe('search.js', function () {
         }));
 
         describe('on init', function () {
+            it('apply projection mask to query', function() {
+                $scope.init({mask:'mask'});
+                $scope.search();
+                expect(request().params.data.args.mask).toEqual('mask');
+            });
+
             describe('without autosearch', function () {
                 beforeEach(function () {
                     $scope.init({

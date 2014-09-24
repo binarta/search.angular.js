@@ -70,6 +70,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
 
     function executeSearch() {
         var applyFiltersAndSendRequest = function () {
+            applyCustomMask();
             applyCustomFilters();
             applyCustomSortings();
             applySearchQueryFilter();
@@ -77,6 +78,10 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
         };
         if ($scope.filtersCustomizer) $scope.filtersCustomizer({filters: $scope.filters, subset: request.params.data.args.subset}).then(applyFiltersAndSendRequest, applyFiltersAndSendRequest);
         else applyFiltersAndSendRequest();
+    }
+
+    function applyCustomMask() {
+        if($scope.mask) request.params.data.args.mask = $scope.mask;
     }
 
     function applyCustomFilters() {
@@ -106,6 +111,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
 
     function Initializer(args) {
         this.execute = function () {
+            exposeMaskOnScope();
             exposeFiltersOnScope();
             exposeSortingsOnScope();
             exposeViewMode($location.search().viewMode ? $location.search().viewMode : args.viewMode);
@@ -114,6 +120,10 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
             prepareRestQuery();
             withLocale($scope.search);
         };
+
+        function exposeMaskOnScope() {
+            $scope.mask = args.mask;
+        }
 
         function exposeFiltersOnScope() {
             $scope.filters = args.filters;
