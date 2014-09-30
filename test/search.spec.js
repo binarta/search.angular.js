@@ -409,6 +409,19 @@ describe('search.js', function () {
                 $routeParams.id = 'id';
             });
 
+            describe('on init with custom id', function() {
+                beforeEach(function () {
+                    $scope.init({
+                        entity: 'E',
+                        id:'custom-id'
+                    });
+                });
+
+                it('fetch entity from server', function () {
+                    expect(request().params.params).toEqual({namespace: 'N', id: 'custom-id', treatInputAsId: true});
+                });
+            });
+
             describe('on init', function () {
                 beforeEach(function () {
                     $scope.init({

@@ -220,7 +220,7 @@ function BinartaEntityController($scope, $routeParams, restServiceHandler, useca
     $scope.init = function (args) {
         self.ctx = args;
         $scope.refresh = function() {$scope.init(args)};
-        fetch({id:$routeParams.id});
+        fetch({id:self.ctx.id || $routeParams.id});
     };
 
     $scope.forCreate = function(args) {
