@@ -199,22 +199,22 @@ function BinartaEntityController($scope, $routeParams, restServiceHandler, useca
     };
 
     function fetch(args) {
-        restServiceHandler({
+        var request = usecaseAdapterFactory($scope);
+        request.params = {
+            method: 'GET',
+            url: config.baseUri + 'api/entity/' + self.ctx.entity,
             params: {
-                method: 'GET',
-                url: config.baseUri + 'api/entity/' + self.ctx.entity,
-                params: {
-                    namespace: config.namespace,
-                    id: args.id,
-                    treatInputAsId: true
-                },
-                withCredentials: true
+                namespace: config.namespace,
+                id: args.id,
+                treatInputAsId: true
             },
-            success: function (entity) {
-                var decorator = binartaEntityDecorators[self.ctx.entity + '.view'];
-                setEntity(decorator ? decorator(entity) : entity);
-            }
-        });
+            withCredentials: true
+        };
+        request.success = function (entity) {
+            var decorator = binartaEntityDecorators[self.ctx.entity + '.view'];
+            setEntity(decorator ? decorator(entity) : entity);
+        };
+        restServiceHandler(request);
     }
 
     $scope.init = function (args) {
