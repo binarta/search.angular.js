@@ -1,7 +1,7 @@
 angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
     .provider('binartaEntityDecorators', BinartaEntityDecoratorsFactory)
     .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaEntityDecorators', BinartaSearchController])
-    .controller('BinartaEntityController', ['$scope', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', BinartaEntityController]);
+    .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', BinartaEntityController]);
 
 function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher, binartaEntityDecorators) {
     var self = this;
@@ -178,7 +178,7 @@ function RedirectToSearchController($scope, $location) {
     }
 }
 
-function BinartaEntityController($scope, $routeParams, restServiceHandler, usecaseAdapterFactory, config, binartaEntityDecorators) {
+function BinartaEntityController($scope, $location, $routeParams, restServiceHandler, usecaseAdapterFactory, config, binartaEntityDecorators) {
     var self = this;
 
     function setEntity(entity) {
@@ -199,6 +199,7 @@ function BinartaEntityController($scope, $routeParams, restServiceHandler, useca
     };
 
     function fetch(args) {
+        setEntity(undefined);
         var request = usecaseAdapterFactory($scope);
         request.params = {
             method: 'GET',
@@ -220,7 +221,10 @@ function BinartaEntityController($scope, $routeParams, restServiceHandler, useca
     $scope.init = function (args) {
         self.ctx = args;
         $scope.refresh = function() {$scope.init(args)};
-        fetch({id:self.ctx.id || $routeParams.id});
+        fetch({id:self.ctx.id || $location.search()[args.queryParam] || $routeParams.id});
+        $scope.$on('$routeUpdate', function(evt, args) {
+            fetch({id:args.params[self.ctx.queryParam]});
+        });
     };
 
     $scope.forCreate = function(args) {

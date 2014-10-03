@@ -14,7 +14,7 @@ describe('search.js', function () {
     }));
 
     function request(idx) {
-        if(!idx) idx = 0;
+        if (!idx) idx = 0;
         return rest.calls[idx].args[0];
     }
 
@@ -24,8 +24,8 @@ describe('search.js', function () {
         }));
 
         describe('on init', function () {
-            it('apply projection mask to query', function() {
-                $scope.init({mask:'mask'});
+            it('apply projection mask to query', function () {
+                $scope.init({mask: 'mask'});
                 $scope.search();
                 expect(request().params.data.args.mask).toEqual('mask');
             });
@@ -409,16 +409,45 @@ describe('search.js', function () {
                 $routeParams.id = 'id';
             });
 
-            describe('on init with custom id', function() {
+            describe('on init with custom id', function () {
                 beforeEach(function () {
                     $scope.init({
                         entity: 'E',
-                        id:'custom-id'
+                        id: 'custom-id'
                     });
                 });
 
                 it('fetch entity from server', function () {
                     expect(request().params.params).toEqual({namespace: 'N', id: 'custom-id', treatInputAsId: true});
+                });
+            });
+
+            describe('on init with query param', function () {
+                beforeEach(inject(function ($location) {
+                    $location.search({id:'search-id'});
+                    $scope.init({
+                        entity: 'E',
+                        queryParam: 'id'
+                    })
+                }));
+
+                it('fetch entity from server', function () {
+                    expect(request().params.params).toEqual({namespace: 'N', id: 'search-id', treatInputAsId: true});
+                });
+
+                describe('on route update', function() {
+                    beforeEach(function() {
+                        request().success('result');
+                        $scope.$broadcast('$routeUpdate', {params:{id:'changed-id'}});
+                    });
+
+                    it('reset existing entity', function() {
+                        expect($scope.entity).toEqual(undefined);
+                    });
+
+                    it('reload entity from server', function() {
+                        expect(request(1).params.params).toEqual({namespace: 'N', id: 'changed-id', treatInputAsId: true});
+                    });
                 });
             });
 
@@ -441,8 +470,8 @@ describe('search.js', function () {
                     expect($scope.entity).toEqual('result');
                 });
 
-                describe('and refresh', function() {
-                    beforeEach(function() {
+                describe('and refresh', function () {
+                    beforeEach(function () {
                         $scope.refresh();
                     });
 
@@ -474,53 +503,53 @@ describe('search.js', function () {
             });
         });
 
-        describe('for create', function() {
-            beforeEach(function() {
-                $scope.forCreate({entity:'E'});
+        describe('for create', function () {
+            beforeEach(function () {
+                $scope.forCreate({entity: 'E'});
             });
 
-            it('exposes entity on scope', function() {
+            it('exposes entity on scope', function () {
                 $scope.forCreate({});
                 expect($scope.entity).toEqual({namespace: 'N'});
             });
 
-            it('on clear resets scoped entity', function() {
+            it('on clear resets scoped entity', function () {
                 $scope.entity.field = 'value';
                 $scope.clear();
-                expect($scope.entity).toEqual({namespace:'N'});
+                expect($scope.entity).toEqual({namespace: 'N'});
             });
 
-            describe('on submit', function() {
-                beforeEach(function() {
+            describe('on submit', function () {
+                beforeEach(function () {
                     $scope.create();
                 });
 
-                it('and submit', function() {
+                it('and submit', function () {
                     expect(request().params.method).toEqual('PUT');
                     expect(request().params.url).toEqual('http://host/api/entity/E');
                     expect(request().params.data).toEqual({namespace: 'N'});
                     expect(request().params.withCredentials).toBeTruthy();
                 });
 
-                it('and success', function() {
-                    request().success({id:'id'});
+                it('and success', function () {
+                    request().success({id: 'id'});
                     expect(request(1).params.method).toEqual('GET');
                     expect(request(1).params.params).toEqual({namespace: 'N', id: 'id', treatInputAsId: true});
                 });
             });
 
-            describe('on edit', function() {
-                beforeEach(function() {
+            describe('on edit', function () {
+                beforeEach(function () {
                     $scope.entity.field = 'value';
-                    $scope.edit({id:'id'});
+                    $scope.edit({id: 'id'});
                 });
 
-                it('expose entity', function() {
-                    request().success({id:'id'});
-                    expect($scope.entity).toEqual({id:'id'});
+                it('expose entity', function () {
+                    request().success({id: 'id'});
+                    expect($scope.entity).toEqual({id: 'id'});
                 });
 
-                it('lookup entity', function() {
+                it('lookup entity', function () {
                     expect(request().params.method).toEqual('GET');
                     expect(request().params.url).toEqual('http://host/api/entity/E');
                     expect(request().params.params).toEqual({namespace: 'N', id: 'id', treatInputAsId: true});
@@ -529,30 +558,32 @@ describe('search.js', function () {
             });
         });
 
-        it('create with mask', function() {
-            $scope.forCreate({mask:{field:'value'}});
+        it('create with mask', function () {
+            $scope.forCreate({mask: {field: 'value'}});
             $scope.create();
-            expect(request().params.data).toEqual({namespace: 'N', field:'value'});
+            expect(request().params.data).toEqual({namespace: 'N', field: 'value'});
         });
 
-        describe('for create with var', function() {
-            beforeEach(function() {
-                $scope.forCreate({var:'v'});
+        describe('for create with var', function () {
+            beforeEach(function () {
+                $scope.forCreate({var: 'v'});
             });
 
-            it('exposes entity on scope', function() {
+            it('exposes entity on scope', function () {
                 expect($scope.v).toEqual({namespace: 'N'});
             });
 
-            it('and submit', function() {
+            it('and submit', function () {
                 $scope.create();
                 expect(request().params.data).toEqual({namespace: 'N'});
             });
         });
 
-        it('create with on success handler', function() {
+        it('create with on success handler', function () {
             var executed = false;
-            $scope.forCreate({onSuccess:function() {executed = true;}});
+            $scope.forCreate({onSuccess: function () {
+                executed = true;
+            }});
             $scope.create();
             request().success({});
             expect(executed).toEqual(true);
