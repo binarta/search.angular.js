@@ -449,6 +449,13 @@ describe('search.js', function () {
                         expect(request(1).params.params).toEqual({namespace: 'N', id: 'changed-id', treatInputAsId: true});
                     });
                 });
+
+                it('when query param is undefined do nothin on route update', inject(function($location) {
+                    request().success('result');
+                    $scope.$broadcast('$routeUpdate', {params:{}});
+                    expect($scope.entity).toEqual('result');
+                    expect(rest.calls[1]).toBeUndefined();
+                }));
             });
 
             describe('on init', function () {

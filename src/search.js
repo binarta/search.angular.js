@@ -223,7 +223,7 @@ function BinartaEntityController($scope, $location, $routeParams, restServiceHan
         $scope.refresh = function() {$scope.init(args)};
         fetch({id:self.ctx.id || $location.search()[args.queryParam] || $routeParams.id});
         if(self.ctx.queryParam) $scope.$on('$routeUpdate', function(evt, args) {
-            fetch({id:args.params[self.ctx.queryParam]});
+            if(args.params[self.ctx.queryParam]) fetch({id:args.params[self.ctx.queryParam]});
         });
     };
 
