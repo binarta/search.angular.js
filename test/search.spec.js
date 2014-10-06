@@ -487,6 +487,18 @@ describe('search.js', function () {
                         expect($scope.entity).toEqual('result');
                     });
                 });
+
+                describe('on route update', function() {
+                    beforeEach(function() {
+                        request().success('result');
+                        $scope.$broadcast('$routeUpdate', {params:{id:'changed-id'}});
+                    });
+
+                    it('do nothing', function() {
+                        expect($scope.entity).toEqual('result');
+                        expect(rest.calls[1]).toBeUndefined();
+                    });
+                })
             });
 
             it('named entity variable', function () {
