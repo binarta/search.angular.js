@@ -116,7 +116,11 @@ describe('search.js', function () {
                         $scope.search();
                         expect(request().params.method).toEqual('POST');
                         expect(request().params.url).toEqual('http://host/api/query/E/C');
-                        expect(request().params.data.args).toEqual({namespace: 'N', customField: 'F', subset: {offset: 0, count: 10}});
+                        expect(request().params.data.args).toEqual({
+                            namespace: 'N',
+                            customField: 'F',
+                            subset: {offset: 0, count: 10}
+                        });
                         expect(request().params.headers['Accept-Language']).toEqual('en');
                         expect(request().params.withCredentials).toBeTruthy();
                     });
@@ -311,9 +315,11 @@ describe('search.js', function () {
             });
 
             it('a custom sorting can be specified on init', function () {
-                $scope.init({sortings: [
-                    {on: 'field', orientation: 'asc'}
-                ]});
+                $scope.init({
+                    sortings: [
+                        {on: 'field', orientation: 'asc'}
+                    ]
+                });
                 $scope.search();
                 expect(request().params.data.args.sortings).toEqual([
                     {on: 'field', orientation: 'asc'}
@@ -424,7 +430,7 @@ describe('search.js', function () {
 
             describe('on init with query param', function () {
                 beforeEach(inject(function ($location) {
-                    $location.search({id:'search-id'});
+                    $location.search({id: 'search-id'});
                     $scope.init({
                         entity: 'E',
                         queryParam: 'id'
@@ -435,24 +441,28 @@ describe('search.js', function () {
                     expect(request().params.params).toEqual({namespace: 'N', id: 'search-id', treatInputAsId: true});
                 });
 
-                describe('on route update', function() {
-                    beforeEach(function() {
+                describe('on route update', function () {
+                    beforeEach(function () {
                         request().success('result');
-                        $scope.$broadcast('$routeUpdate', {params:{id:'changed-id'}});
+                        $scope.$broadcast('$routeUpdate', {params: {id: 'changed-id'}});
                     });
 
-                    it('reset existing entity', function() {
+                    it('reset existing entity', function () {
                         expect($scope.entity).toEqual(undefined);
                     });
 
-                    it('reload entity from server', function() {
-                        expect(request(1).params.params).toEqual({namespace: 'N', id: 'changed-id', treatInputAsId: true});
+                    it('reload entity from server', function () {
+                        expect(request(1).params.params).toEqual({
+                            namespace: 'N',
+                            id: 'changed-id',
+                            treatInputAsId: true
+                        });
                     });
                 });
 
-                it('when query param is undefined do nothin on route update', inject(function($location) {
+                it('when query param is undefined do nothin on route update', inject(function ($location) {
                     request().success('result');
-                    $scope.$broadcast('$routeUpdate', {params:{}});
+                    $scope.$broadcast('$routeUpdate', {params: {}});
                     expect($scope.entity).toEqual('result');
                     expect(rest.calls[1]).toBeUndefined();
                 }));
@@ -495,13 +505,13 @@ describe('search.js', function () {
                     });
                 });
 
-                describe('on route update', function() {
-                    beforeEach(function() {
+                describe('on route update', function () {
+                    beforeEach(function () {
                         request().success('result');
-                        $scope.$broadcast('$routeUpdate', {params:{id:'changed-id'}});
+                        $scope.$broadcast('$routeUpdate', {params: {id: 'changed-id'}});
                     });
 
-                    it('do nothing', function() {
+                    it('do nothing', function () {
                         expect($scope.entity).toEqual('result');
                         expect(rest.calls[1]).toBeUndefined();
                     });
@@ -600,14 +610,59 @@ describe('search.js', function () {
 
         it('create with on success handler', function () {
             var executed = false;
-            $scope.forCreate({onSuccess: function () {
-                executed = true;
-            }});
+            $scope.forCreate({
+                onSuccess: function () {
+                    executed = true;
+                }
+            });
             $scope.create();
             request().success({});
             expect(executed).toEqual(true);
         });
     });
+
+    describe('binarta entity service', function () {
+        var reader, args, response;
+
+        beforeEach(inject(function (binartaEntityReader) {
+            reader = binartaEntityReader;
+            args = {request: {}};
+            args.$scope = $scope;
+            args.success = function (it) {
+                response = it;
+            }
+        }));
+
+        function read() {
+            return reader(args);
+        }
+
+        describe('given id', function () {
+            beforeEach(function () {
+                args.request.id = 'id';
+            });
+
+            describe('then', function () {
+                beforeEach(function () {
+                    args.entity = 'E';
+                    args.request.id = 'custom-id';
+                    read();
+                });
+
+                it('fetch entity from server', function () {
+                    expect(request().params.params).toEqual({namespace: 'N', id: 'custom-id', treatInputAsId: true});
+                });
+            });
+
+            it('decorate entity', function () {
+                args.entity = 'decorated-entity';
+                read();
+                request().success({msg: 'result'});
+                expect(response.msg).toEqual('result');
+                expect(response.decoratedMsg).toEqual('decorated result');
+            });
+        });
+    })
 });
 
 angular.module('test.app', ['binarta.search'])

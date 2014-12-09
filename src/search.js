@@ -1,7 +1,8 @@
 angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
     .provider('binartaEntityDecorators', BinartaEntityDecoratorsFactory)
+    .factory('binartaEntityReader', ['usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'restServiceHandler', BinartaEntityReaderFactory])
     .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaEntityDecorators', BinartaSearchController])
-    .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', BinartaEntityController]);
+    .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'binartaEntityReader', BinartaEntityController]);
 
 function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandler, config, ngRegisterTopicHandler, $location, topicMessageDispatcher, binartaEntityDecorators) {
     var self = this;
@@ -76,12 +77,15 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
             applySearchQueryFilter();
             restServiceHandler(request);
         };
-        if ($scope.filtersCustomizer) $scope.filtersCustomizer({filters: $scope.filters, subset: request.params.data.args.subset}).then(applyFiltersAndSendRequest, applyFiltersAndSendRequest);
+        if ($scope.filtersCustomizer) $scope.filtersCustomizer({
+            filters: $scope.filters,
+            subset: request.params.data.args.subset
+        }).then(applyFiltersAndSendRequest, applyFiltersAndSendRequest);
         else applyFiltersAndSendRequest();
     }
 
     function applyCustomMask() {
-        if($scope.mask) request.params.data.args.mask = $scope.mask;
+        if ($scope.mask) request.params.data.args.mask = $scope.mask;
     }
 
     function applyCustomFilters() {
@@ -91,13 +95,13 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
                 p[c] = $scope.filters[c];
                 return p;
             }, request.params.data.args);
-            if(decorator)
+            if (decorator)
                 request.params.data.args = decorator(request.params.data.args)
         }
     }
 
     function applyCustomSortings() {
-        if($scope.sortings) request.params.data.args.sortings = $scope.sortings;
+        if ($scope.sortings) request.params.data.args.sortings = $scope.sortings;
     }
 
     function applySearchQueryFilter() {
@@ -130,7 +134,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
         }
 
         function exposeSortingsOnScope() {
-            if(args.sortings) $scope.sortings = args.sortings;
+            if (args.sortings) $scope.sortings = args.sortings;
         }
 
         function extractSearchTextFromUrl() {
@@ -178,7 +182,28 @@ function RedirectToSearchController($scope, $location) {
     }
 }
 
-function BinartaEntityController($scope, $location, $routeParams, restServiceHandler, usecaseAdapterFactory, config, binartaEntityDecorators) {
+function BinartaEntityReaderFactory(usecaseAdapterFactory, config, binartaEntityDecorators, restServiceHandler) {
+    return function (args) {
+        var request = usecaseAdapterFactory(args.$scope);
+        var params = args.request;
+        params.namespace = config.namespace;
+        params.treatInputAsId = true;
+
+        request.params = {
+            method: 'GET',
+            url: config.baseUri + 'api/entity/' + args.entity,
+            params: params,
+            withCredentials: true
+        };
+        request.success = function (entity) {
+            var decorator = binartaEntityDecorators[args.entity + '.view'];
+            args.success(decorator ? decorator(entity) : entity);
+        };
+        restServiceHandler(request);
+    }
+}
+
+function BinartaEntityController($scope, $location, $routeParams, restServiceHandler, usecaseAdapterFactory, config, binartaEntityDecorators, binartaEntityReader) {
     var self = this;
 
     function setEntity(entity) {
@@ -189,9 +214,9 @@ function BinartaEntityController($scope, $location, $routeParams, restServiceHan
         return $scope[self.ctx.var || 'entity'];
     }
 
-    $scope.clear = function() {
-        var entity = {namespace:config.namespace};
-        if(self.ctx.mask) Object.keys(self.ctx.mask).reduce(function (p, c) {
+    $scope.clear = function () {
+        var entity = {namespace: config.namespace};
+        if (self.ctx.mask) Object.keys(self.ctx.mask).reduce(function (p, c) {
             p[c] = self.ctx.mask[c];
             return p;
         }, entity);
@@ -200,39 +225,31 @@ function BinartaEntityController($scope, $location, $routeParams, restServiceHan
 
     function fetch(args) {
         setEntity(undefined);
-        var request = usecaseAdapterFactory($scope);
-        request.params = {
-            method: 'GET',
-            url: config.baseUri + 'api/entity/' + self.ctx.entity,
-            params: {
-                namespace: config.namespace,
-                id: args.id,
-                treatInputAsId: true
-            },
-            withCredentials: true
-        };
-        request.success = function (entity) {
-            var decorator = binartaEntityDecorators[self.ctx.entity + '.view'];
-            setEntity(decorator ? decorator(entity) : entity);
-        };
-        restServiceHandler(request);
+        binartaEntityReader({
+            $scope: $scope,
+            entity: self.ctx.entity,
+            request: {id: args.id},
+            success: setEntity
+        });
     }
 
     $scope.init = function (args) {
         self.ctx = args;
-        $scope.refresh = function() {$scope.init(args)};
-        fetch({id:self.ctx.id || $location.search()[args.queryParam] || $routeParams.id});
-        if(self.ctx.queryParam) $scope.$on('$routeUpdate', function(evt, args) {
-            if(args.params[self.ctx.queryParam]) fetch({id:args.params[self.ctx.queryParam]});
+        $scope.refresh = function () {
+            $scope.init(args)
+        };
+        fetch({id: self.ctx.id || $location.search()[args.queryParam] || $routeParams.id});
+        if (self.ctx.queryParam) $scope.$on('$routeUpdate', function (evt, args) {
+            if (args.params[self.ctx.queryParam]) fetch({id: args.params[self.ctx.queryParam]});
         });
     };
 
-    $scope.forCreate = function(args) {
+    $scope.forCreate = function (args) {
         self.ctx = args;
         $scope.clear();
     };
 
-    $scope.create = function() {
+    $scope.create = function () {
         var decorator = binartaEntityDecorators[self.ctx.entity + '.add'];
         var request = usecaseAdapterFactory($scope);
         request.params = {
@@ -241,15 +258,15 @@ function BinartaEntityController($scope, $location, $routeParams, restServiceHan
             data: decorator ? decorator(getEntity()) : getEntity(),
             withCredentials: true
         };
-        request.success = function(it) {
+        request.success = function (it) {
             $scope.edit(it);
-            if(self.ctx.onSuccess) self.ctx.onSuccess();
+            if (self.ctx.onSuccess) self.ctx.onSuccess();
         };
         restServiceHandler(request);
     };
 
-    $scope.edit = function(args) {
-        fetch({id:args.id});
+    $scope.edit = function (args) {
+        fetch({id: args.id});
     }
 }
 
