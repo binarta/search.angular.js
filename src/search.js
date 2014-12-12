@@ -1,5 +1,6 @@
 angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
     .provider('binartaEntityDecorators', BinartaEntityDecoratorsFactory)
+    .factory('binartaEntityExists', ['usecaseAdapterFactory', 'config', 'restServiceHandler', BinartaEntityExistsFactory])
     .factory('binartaEntityReader', ['usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'restServiceHandler', BinartaEntityReaderFactory])
     .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaEntityDecorators', BinartaSearchController])
     .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'binartaEntityReader', BinartaEntityController]);
@@ -199,6 +200,24 @@ function BinartaEntityReaderFactory(usecaseAdapterFactory, config, binartaEntity
             var decorator = binartaEntityDecorators[args.entity + '.view'];
             args.success(decorator ? decorator(entity) : entity);
         };
+        restServiceHandler(request);
+    }
+}
+
+function BinartaEntityExistsFactory(usecaseAdapterFactory, config, restServiceHandler) {
+    return function(args) {
+        var request = usecaseAdapterFactory(args.$scope);
+        var params = args.request;
+        params.namespace = config.namespace;
+
+        request.params = {
+            method: 'HEAD',
+            url: config.baseUri + 'api/entity/' + args.entity,
+            params: params,
+            withCredentials: true
+        };
+        request.success = args.success;
+        request.notFound = args.notFound;
         restServiceHandler(request);
     }
 }

@@ -621,7 +621,7 @@ describe('search.js', function () {
         });
     });
 
-    describe('binarta entity service', function () {
+    describe('binarta entity reader', function () {
         var reader, args, response;
 
         beforeEach(inject(function (binartaEntityReader) {
@@ -660,6 +660,53 @@ describe('search.js', function () {
                 request().success({msg: 'result'});
                 expect(response.msg).toEqual('result');
                 expect(response.decoratedMsg).toEqual('decorated result');
+            });
+        });
+    });
+
+    describe('binarta entity exists', function () {
+        var exists, args, response;
+
+        beforeEach(inject(function (binartaEntityExists) {
+            exists = binartaEntityExists;
+            args = {request: {}};
+            args.$scope = $scope;
+            args.success = function () {
+                response = true;
+            };
+            args.notFound = function() {
+                response = false;
+            }
+        }));
+
+        function execute() {
+            return exists(args);
+        }
+
+        describe('given id', function () {
+            beforeEach(function () {
+                args.entity = 'E';
+                args.request.id = 'id';
+            });
+
+            it('call server', function () {
+                execute();
+                expect(request().params.method).toEqual('HEAD');
+                expect(request().params.url).toEqual('http://host/api/entity/E');
+                expect(request().params.params).toEqual({namespace: 'N', id: 'id'});
+                expect(request().params.withCredentials).toBeTruthy();
+            });
+
+            it('exists', function () {
+                execute();
+                request().success();
+                expect(response).toEqual(true);
+            });
+
+            it('not exists', function () {
+                execute();
+                request().notFound();
+                expect(response).toEqual(false);
             });
         });
     })
