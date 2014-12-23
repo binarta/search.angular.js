@@ -631,6 +631,9 @@ describe('search.js', function () {
             args.success = function (it) {
                 response = it;
             }
+            args.notFound = function() {
+                response = 'not-found';
+            }
         }));
 
         function read() {
@@ -660,6 +663,12 @@ describe('search.js', function () {
                 request().success({msg: 'result'});
                 expect(response.msg).toEqual('result');
                 expect(response.decoratedMsg).toEqual('decorated result');
+            });
+
+            it('not exists', function () {
+                read();
+                request().notFound();
+                expect(response).toEqual('not-found');
             });
         });
     });

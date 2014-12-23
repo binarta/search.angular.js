@@ -200,6 +200,7 @@ function BinartaEntityReaderFactory(usecaseAdapterFactory, config, binartaEntity
             var decorator = binartaEntityDecorators[args.entity + '.view'];
             args.success(decorator ? decorator(entity) : entity);
         };
+        request.notFound = args.notFound;
         restServiceHandler(request);
     }
 }
