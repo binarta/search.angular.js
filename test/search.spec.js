@@ -718,7 +718,46 @@ describe('search.js', function () {
                 expect(response).toEqual(false);
             });
         });
-    })
+    });
+
+    describe('binarta entity echo', function() {
+        var echo, args, response;
+
+        beforeEach(inject(function(binartaEntityEcho) {
+            echo = binartaEntityEcho;
+            args = {request:{}};
+            args.$scope = $scope;
+            args.success = function(payload) {
+                response = payload;
+            };
+        }));
+
+        function execute() {
+            echo(args);
+        }
+
+        describe('given entity', function() {
+            beforeEach(function() {
+                args.entity = 'E';
+                args.request.id = 'I';
+            });
+
+            it('call server', function() {
+                execute();
+                expect(request().params.method).toEqual('POST');
+                expect(request().params.url).toEqual('http://host/api/echo/E');
+                expect(request().params.data).toEqual({id:'I'});
+                expect(request().params.withCredentials).toBeTruthy();
+            });
+
+            it('success', function() {
+                execute();
+                request().success('D');
+                expect(response).toEqual('D');
+            })
+        });
+
+    });
 });
 
 angular.module('test.app', ['binarta.search'])

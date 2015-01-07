@@ -2,6 +2,7 @@ angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'con
     .provider('binartaEntityDecorators', BinartaEntityDecoratorsFactory)
     .factory('binartaEntityExists', ['usecaseAdapterFactory', 'config', 'restServiceHandler', BinartaEntityExistsFactory])
     .factory('binartaEntityReader', ['usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'restServiceHandler', BinartaEntityReaderFactory])
+    .factory('binartaEntityEcho', ['usecaseAdapterFactory', 'config', 'restServiceHandler', BinartaEntityEchoFactory])
     .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'restServiceHandler', 'config', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaEntityDecorators', BinartaSearchController])
     .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'binartaEntityReader', BinartaEntityController]);
 
@@ -220,6 +221,20 @@ function BinartaEntityExistsFactory(usecaseAdapterFactory, config, restServiceHa
         request.success = args.success;
         request.notFound = args.notFound;
         restServiceHandler(request);
+    }
+}
+
+function BinartaEntityEchoFactory(usecaseAdapterFactory, config, restServiceHandler) {
+    return function(args) {
+        var request = usecaseAdapterFactory(args.$scope);
+        request.params = {
+            method:'POST',
+            url: config.baseUri + 'api/echo/' + args.entity,
+            withCredentials: true,
+            data: args.request
+        };
+        request.success = args.success;
+        restServiceHandler(request)
     }
 }
 
