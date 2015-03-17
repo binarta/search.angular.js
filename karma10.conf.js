@@ -4,6 +4,7 @@ module.exports = function(config) {
         frameworks:['jasmine'],
         files:[
             {pattern:'bower_components/angular/angular.js'},
+            {pattern:'bower_components/angular-route/angular-route.js'},
             {pattern:'bower_components/angular-mocks/angular-mocks.js'},
             {pattern:'bower_components/binarta.usecase.adapter.angular/src/angular.usecase.adapter.js'},
             {pattern:'bower_components/thk-rest-client-mock/src/rest.client.mock.js'},

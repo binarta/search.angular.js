@@ -1,4 +1,4 @@
-angular.module('binarta.search', ['angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
+angular.module('binarta.search', ['ngRoute', 'angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
     .provider('binartaEntityDecorators', BinartaEntityDecoratorsFactory)
     .factory('binartaEntityExists', ['usecaseAdapterFactory', 'config', 'restServiceHandler', BinartaEntityExistsFactory])
     .factory('binartaEntityReader', ['usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'restServiceHandler', BinartaEntityReaderFactory])
