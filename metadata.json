@@ -1,0 +1,13 @@
+{
+  "msgs":{
+    "default":{
+      "no.more.results.found": "Geen verdere resultaten."
+    },
+    "nl":{
+      "no.more.results.found": "Geen verdere resultaten."
+    },
+    "en":{
+      "no.more.results.found": "No more results found."
+    }
+  }
+}
