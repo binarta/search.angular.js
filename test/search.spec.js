@@ -113,7 +113,6 @@ describe('search.js', function () {
                     });
 
                     it('and search do rest call', function () {
-                        $scope.search();
                         expect(request().params.method).toEqual('POST');
                         expect(request().params.url).toEqual('http://host/api/query/E/C');
                         expect(request().params.data.args).toEqual({
@@ -176,6 +175,23 @@ describe('search.js', function () {
                         })
                     });
 
+                    describe('and when only use the default locale', function () {
+                        beforeEach(function () {
+                            $scope.init({
+                                entity: 'E',
+                                context: 'C',
+                                autosearch: true,
+                                filters: {
+                                    locale: 'default'
+                                }
+                            });
+                        });
+
+                        it('accept default locale', function () {
+                            expect(request().params.headers['Accept-Language']).toEqual('default');
+                        });
+                    });
+
                     describe('and with search results', function () {
                         var results;
 
@@ -184,7 +200,6 @@ describe('search.js', function () {
                                 {name: 'item-1'}
                             ];
 
-                            $scope.search();
                             request().success(results);
                         });
 
@@ -300,7 +315,7 @@ describe('search.js', function () {
                             });
                         });
                     });
-                })
+                });
             });
 
             it('do not subscribe for end of page events when not enabled', function () {

@@ -124,7 +124,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
             if (args.subset && args.subset.count) defaultSubset.count = args.subset.count;
             extractSearchTextFromUrl();
             prepareRestQuery();
-            withLocale($scope.search);
+            args.filters && args.filters.locale == 'default' ? withDefaultLocale($scope.search) : withLocale($scope.search);
         };
 
         function exposeMaskOnScope() {
@@ -163,6 +163,11 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
                 },
                 executeHandlerOnce: true
             });
+        }
+
+        function withDefaultLocale(callback) {
+            request.params.headers = {'Accept-Language': 'default'};
+            if (args.autosearch) callback();
         }
     }
 }
