@@ -158,7 +158,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
                 scope: $scope,
                 topic: 'i18n.locale',
                 handler: function (locale) {
-                    request.params.headers = {'Accept-Language': locale};
+                    request.params.headers = {'accept-language': locale};
                     if (args.autosearch) callback();
                 },
                 executeHandlerOnce: true
@@ -166,7 +166,7 @@ function BinartaSearchController($scope, usecaseAdapterFactory, restServiceHandl
         }
 
         function withDefaultLocale(callback) {
-            request.params.headers = {'Accept-Language': 'default'};
+            request.params.headers = {'accept-language': 'default'};
             if (args.autosearch) callback();
         }
     }

@@ -120,7 +120,7 @@ describe('search.js', function () {
                             customField: 'F',
                             subset: {offset: 0, count: 10}
                         });
-                        expect(request().params.headers['Accept-Language']).toEqual('en');
+                        expect(request().params.headers['accept-language']).toEqual('en');
                         expect(request().params.withCredentials).toBeTruthy();
                     });
 
@@ -188,7 +188,7 @@ describe('search.js', function () {
                         });
 
                         it('accept default locale', function () {
-                            expect(request().params.headers['Accept-Language']).toEqual('default');
+                            expect(request().params.headers['accept-language']).toEqual('default');
                         });
                     });
 
