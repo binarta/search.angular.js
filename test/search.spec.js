@@ -124,6 +124,10 @@ describe('search.js', function () {
                         expect(request().params.withCredentials).toBeTruthy();
                     });
 
+                    it('locale param should be on data', function () {
+                        expect(request().params.data.locale).toEqual('en');
+                    });
+
                     it('and search with query string', inject(function ($location) {
                         $scope.q = 'query-string';
                         $scope.search();
@@ -189,6 +193,10 @@ describe('search.js', function () {
 
                         it('accept default locale', function () {
                             expect(request().params.headers['accept-language']).toEqual('default');
+                        });
+
+                        it('default locale param is on data', function () {
+                            expect(request().params.data.locale).toEqual('default');
                         });
                     });
 
