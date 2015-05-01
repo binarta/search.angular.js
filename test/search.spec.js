@@ -394,7 +394,7 @@ describe('search.js', function () {
 
     describe('RedirectToSearchController', function () {
         beforeEach(inject(function ($controller) {
-            ctrl = $controller(RedirectToSearchController, {$scope: $scope});
+            ctrl = $controller('RedirectToSearchController', {$scope: $scope});
         }));
 
         describe('on init', function () {
