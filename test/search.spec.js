@@ -18,9 +18,80 @@ describe('search.js', function () {
         return rest.calls[idx].args[0];
     }
 
+    describe('binartaSearch', function () {
+        var search;
+        beforeEach(inject(function (binartaSearch) {
+            search = binartaSearch;
+        }));
+
+        it('apply projection mask to query', function () {
+            search({mask: 'mask'});
+            expect(request().params.data.args.mask).toEqual('mask');
+        });
+
+        it('and search do rest call', function () {
+            search({
+                entity: 'E',
+                action: 'C',
+                filters: {customField: 'F'},
+                subset: {offset: 0, count: 10},
+                locale: 'en'
+            });
+            expect(request().params.method).toEqual('POST');
+            expect(request().params.url).toEqual('http://host/api/query/E/C');
+            expect(request().params.data.args).toEqual({
+                namespace: 'N',
+                customField: 'F',
+                subset: {offset: 0, count: 10}
+            });
+            expect(request().params.data.locale).toEqual('en');
+            expect(request().params.headers['accept-language']).toEqual('en');
+            expect(request().params.withCredentials).toBeTruthy();
+        });
+
+        it('and search with query string', function () {
+            search({q: 'query-string'});
+            expect(request().params.data.args.q).toEqual('query-string');
+        });
+
+        describe('and with search results', function () {
+            var expected, actual, success;
+
+            beforeEach(function () {
+                expected = [
+                    {name: 'item-1'}
+                ];
+
+                success = function (it) {
+                    actual = it;
+                };
+                search({success: success});
+                request().success(expected);
+            });
+
+            it('exposed on scope', function () {
+                expect(actual).toEqual(expected);
+            });
+
+            it('results can be decorated with decorator provider', function () {
+                search({entity: 'decorated-entity', action: 'view', success: success});
+                request(1).success([
+                    {msg: 'result'}
+                ]);
+                expect(actual[0].msg).toEqual('result');
+                expect(actual[0].decoratedMsg).toEqual('decorated result');
+            });
+        });
+
+        it('filters can be decorated with the decorators provider', function () {
+            search({entity: 'decorated-entity', action: 'action', filters: {field: 'msg'}});
+            expect(request().params.data.args.field).toEqual('decorated msg');
+        });
+    });
+
     describe('BinartaSearchController', function () {
         beforeEach(inject(function ($controller) {
-            ctrl = $controller(BinartaSearchController, {$scope: $scope});
+            ctrl = $controller('BinartaSearchController', {$scope: $scope});
         }));
 
         describe('on init', function () {
@@ -131,14 +202,14 @@ describe('search.js', function () {
                     it('and search with query string', inject(function ($location) {
                         $scope.q = 'query-string';
                         $scope.search();
-                        expect(request().params.data.args.q).toEqual($scope.q);
+                        expect(request(1).params.data.args.q).toEqual($scope.q);
                         expect($location.search()).toEqual({q: 'query-string'});
                     }));
 
                     it('and search with custom filters defined through $scope', function () {
                         $scope.filters.anotherFilter = 'X';
                         $scope.search();
-                        expect(request().params.data.args.anotherFilter).toEqual('X');
+                        expect(request(1).params.data.args.anotherFilter).toEqual('X');
                     });
 
                     describe('with filters customizer', function () {
@@ -192,11 +263,11 @@ describe('search.js', function () {
                         });
 
                         it('accept default locale', function () {
-                            expect(request().params.headers['accept-language']).toEqual('default');
+                            expect(request(1).params.headers['accept-language']).toEqual('default');
                         });
 
                         it('default locale param is on data', function () {
-                            expect(request().params.data.locale).toEqual('default');
+                            expect(request(1).params.data.locale).toEqual('default');
                         });
                     });
 
@@ -237,7 +308,7 @@ describe('search.js', function () {
                         it('results can be decorated with decorator provider', function () {
                             $scope.init({entity: 'decorated-entity', context: 'view'});
                             $scope.search();
-                            request().success([
+                            request(1).success([
                                 {msg: 'result'}
                             ]);
                             expect($scope.results[0].msg).toEqual('result');
@@ -256,7 +327,7 @@ describe('search.js', function () {
 
                             it('new searches reset the offset', function () {
                                 $scope.search();
-                                expect(request().params.data.args.subset).toEqual({offset: 0, count: 10});
+                                expect(request(1).params.data.args.subset).toEqual({offset: 0, count: 10});
                             });
 
                             describe('and more results found', function () {
@@ -430,7 +501,7 @@ describe('search.js', function () {
 
     describe('BinartaEntityController', function () {
         beforeEach(inject(function ($controller) {
-            ctrl = $controller(BinartaEntityController, {$scope: $scope, $routeParams: $routeParams});
+            ctrl = $controller('BinartaEntityController', {$scope: $scope, $routeParams: $routeParams});
         }));
 
         describe('given id', function () {
@@ -654,7 +725,7 @@ describe('search.js', function () {
             args.success = function (it) {
                 response = it;
             }
-            args.notFound = function() {
+            args.notFound = function () {
                 response = 'not-found';
             }
         }));
@@ -706,7 +777,7 @@ describe('search.js', function () {
             args.success = function () {
                 response = true;
             };
-            args.notFound = function() {
+            args.notFound = function () {
                 response = false;
             }
         }));
@@ -743,14 +814,14 @@ describe('search.js', function () {
         });
     });
 
-    describe('binarta entity echo', function() {
+    describe('binarta entity echo', function () {
         var echo, args, response;
 
-        beforeEach(inject(function(binartaEntityEcho) {
+        beforeEach(inject(function (binartaEntityEcho) {
             echo = binartaEntityEcho;
-            args = {request:{}};
+            args = {request: {}};
             args.$scope = $scope;
-            args.success = function(payload) {
+            args.success = function (payload) {
                 response = payload;
             };
         }));
@@ -759,21 +830,21 @@ describe('search.js', function () {
             echo(args);
         }
 
-        describe('given entity', function() {
-            beforeEach(function() {
+        describe('given entity', function () {
+            beforeEach(function () {
                 args.entity = 'E';
                 args.request.id = 'I';
             });
 
-            it('call server', function() {
+            it('call server', function () {
                 execute();
                 expect(request().params.method).toEqual('POST');
                 expect(request().params.url).toEqual('http://host/api/echo/E');
-                expect(request().params.data).toEqual({id:'I'});
+                expect(request().params.data).toEqual({id: 'I'});
                 expect(request().params.withCredentials).toBeTruthy();
             });
 
-            it('success', function() {
+            it('success', function () {
                 execute();
                 request().success('D');
                 expect(response).toEqual('D');
