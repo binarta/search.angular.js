@@ -2,7 +2,8 @@
   "name": "binarta.search.angular",
   "main": [
     "./src/search.js",
-    "./metadata.json"
+    "./metadata.json",
+    "./metadata-system.json"
   ],
   "dependencies": {
     "angular": "1.3.*",
