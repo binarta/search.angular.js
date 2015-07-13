@@ -5,7 +5,7 @@
         .factory('binartaEntityReader', ['usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'restServiceHandler', BinartaEntityReaderFactory])
         .factory('binartaEntityEcho', ['usecaseAdapterFactory', 'config', 'restServiceHandler', BinartaEntityEchoFactory])
         .factory('binartaSearch', ['restServiceHandler', 'binartaEntityDecorators', 'config', BinartaSearchFactory])
-        .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaSearch', BinartaSearchController])
+        .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaSearch', '$routeParams', BinartaSearchController])
         .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'binartaEntityReader', BinartaEntityController])
         .controller('RedirectToSearchController', ['$scope', '$location', RedirectToSearchController]);
 
@@ -43,7 +43,7 @@
         }
     }
 
-    function BinartaSearchController($scope, usecaseAdapterFactory, ngRegisterTopicHandler, $location, topicMessageDispatcher, search) {
+    function BinartaSearchController($scope, usecaseAdapterFactory, ngRegisterTopicHandler, $location, topicMessageDispatcher, search, $routeParams) {
         var self = this;
 
         $scope.$on('$routeUpdate', function () {
@@ -64,8 +64,15 @@
             self.action = args.context;
             $scope.decorator = args.decorator;
             $scope.filtersCustomizer = args.filtersCustomizer;
+            applyRouteTypeToFilters();
             new Initializer(args).execute();
+
+            function applyRouteTypeToFilters() {
+                if (!args.filters) args.filters = {};
+                if (!args.filters.type) args.filters.type = $routeParams.type;
+            }
         };
+
 
         function exposeSearchResultsOnScope(results) {
             if (results.length > 0) incrementOffset(results.length);

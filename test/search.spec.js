@@ -432,6 +432,20 @@ describe('search.js', function () {
                 expect($scope.filters.field).toEqual('msg');
             });
 
+            it('when route params provides type and no type is passed to init then configure tpe', inject(function($routeParams) {
+                $routeParams.type = 'type';
+                $scope.init({});
+                $scope.search();
+                expect(request().params.data.args.type).toEqual('type');
+            }));
+
+            it('when init receives type do not override it with route params', inject(function($routeParams) {
+                $routeParams.type = 'type';
+                $scope.init({filters:{type:'original'}});
+                $scope.search();
+                expect(request().params.data.args.type).toEqual('original');
+            }));
+
             describe('view mode', function () {
                 it('defaults to undefined', inject(function ($location) {
                     $scope.init({});
