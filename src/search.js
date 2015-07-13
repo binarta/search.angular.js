@@ -7,7 +7,12 @@
         .factory('binartaSearch', ['restServiceHandler', 'binartaEntityDecorators', 'config', BinartaSearchFactory])
         .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaSearch', '$routeParams', BinartaSearchController])
         .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'binartaEntityReader', BinartaEntityController])
-        .controller('RedirectToSearchController', ['$scope', '$location', RedirectToSearchController]);
+        .controller('RedirectToSearchController', ['$scope', '$location', RedirectToSearchController])
+        .config(['$routeProvider', function($routeProvider) {
+            $routeProvider
+                .when('/search/:type', {templateUrl: 'partials/search/index.html', reloadOnSearch:false})
+                .when('/:locale/search/:type', {templateUrl: 'partials/search/index.html', reloadOnSearch:false});
+        }]);
 
     function BinartaSearchFactory(rest, decorators, config) {
         return function (args) {
