@@ -432,6 +432,20 @@ describe('search.js', function () {
                 expect($scope.filters.field).toEqual('msg');
             });
 
+            it('when route params provides type and no type is passed to init then configure tpe', inject(function ($routeParams) {
+                $routeParams.type = 'type';
+                $scope.init({});
+                $scope.search();
+                expect(request().params.data.args.type).toEqual('type');
+            }));
+
+            it('when init receives type do not override it with route params', inject(function ($routeParams) {
+                $routeParams.type = 'type';
+                $scope.init({filters: {type: 'original'}});
+                $scope.search();
+                expect(request().params.data.args.type).toEqual('original');
+            }));
+
             describe('view mode', function () {
                 it('defaults to undefined', inject(function ($location) {
                     $scope.init({});
@@ -627,8 +641,11 @@ describe('search.js', function () {
         });
 
         describe('for create', function () {
+            var ctx;
+
             beforeEach(function () {
-                $scope.forCreate({entity: 'E'});
+                ctx = {entity: 'E'};
+                $scope.forCreate(ctx);
             });
 
             it('exposes entity on scope', function () {
@@ -650,7 +667,7 @@ describe('search.js', function () {
                 it('and submit', function () {
                     expect(request().params.method).toEqual('PUT');
                     expect(request().params.url).toEqual('http://host/api/entity/E');
-                    expect(request().params.data).toEqual({namespace: 'N'});
+                    expect(request().params.data).toEqual({namespace: 'N', context:'add'});
                     expect(request().params.withCredentials).toBeTruthy();
                 });
 
@@ -667,16 +684,76 @@ describe('search.js', function () {
                     $scope.edit({id: 'id'});
                 });
 
-                it('expose entity', function () {
-                    request().success({id: 'id'});
-                    expect($scope.entity).toEqual({id: 'id'});
-                });
-
                 it('lookup entity', function () {
                     expect(request().params.method).toEqual('GET');
                     expect(request().params.url).toEqual('http://host/api/entity/E');
                     expect(request().params.params).toEqual({namespace: 'N', id: 'id', treatInputAsId: true});
                     expect(request().params.withCredentials).toBeTruthy();
+                });
+
+                describe('on lookup success', function () {
+                    var entity;
+
+                    beforeEach(function () {
+                        entity = {id: '/id'};
+                        request().success(entity);
+                    });
+
+                    it('expose entity', function () {
+                        expect($scope.entity).toEqual({id: '/id'});
+                    });
+
+                    describe('on update', function () {
+                        beforeEach(function () {
+                            $scope.update();
+                        });
+
+                        it('perform HTTP POST', function () {
+                            expect(request(1).params.method).toEqual('POST');
+                            expect(request(1).params.url).toEqual('http://host/api/entity/E');
+                            expect(request(1).params.data).toEqual({context:'update', id: '/id'});
+                            expect(request(1).params.withCredentials).toBeTruthy();
+                        });
+
+                        it('succeeds without on success handler', function () {
+                            request(1).success({id:'id'});
+                        });
+
+                        it('succeeds with on success handler', function () {
+                            ctx.onSuccess = jasmine.createSpy('onSuccess');
+                            request(1).success({id:'id'});
+                            expect(ctx.onSuccess).toHaveBeenCalled();
+                        });
+                    });
+
+                    it('on update decorate entity', function () {
+                        ctx.entity = 'decorated-entity';
+                        entity.field = 'field';
+                        $scope.update();
+                        expect(request(1).params.data).toEqual({id: '/id', field:'decorated field', context:'update'})
+                    });
+
+                    describe('on remove', function() {
+                        beforeEach(function() {
+                            $scope.remove()
+                        });
+
+                        it('perform HTTP DELETE', function() {
+                            expect(request(1).params.method).toEqual('DELETE');
+                            expect(request(1).params.url).toEqual('http://host/api/entity/E?id=%2Fid');
+                            expect(request(1).params.withCredentials).toBeTruthy();
+                        });
+
+                        it('succeeds without on success handler', function () {
+                            request(1).success();
+                        });
+
+                        it('succeeds with on success handler', function () {
+                            ctx.onSuccess = jasmine.createSpy('onSuccess');
+                            request(1).success();
+                            expect(ctx.onSuccess).toHaveBeenCalled();
+                        });
+                    });
                 });
             });
         });
@@ -684,7 +761,7 @@ describe('search.js', function () {
         it('create with mask', function () {
             $scope.forCreate({mask: {field: 'value'}});
             $scope.create();
-            expect(request().params.data).toEqual({namespace: 'N', field: 'value'});
+            expect(request().params.data).toEqual({namespace: 'N', field: 'value', context:'add'});
         });
 
         describe('for create with var', function () {
@@ -698,7 +775,7 @@ describe('search.js', function () {
 
             it('and submit', function () {
                 $scope.create();
-                expect(request().params.data).toEqual({namespace: 'N'});
+                expect(request().params.data).toEqual({namespace: 'N', context:'add'});
             });
         });
 
@@ -868,6 +945,15 @@ angular.module('test.app', ['binarta.search'])
         binartaEntityDecoratorsProvider.add({
             entity: 'decorated-entity',
             action: 'action.request',
+            mapper: function (it) {
+                it.field = 'decorated ' + it.field;
+                return it;
+            }
+        });
+
+        binartaEntityDecoratorsProvider.add({
+            entity: 'decorated-entity',
+            action: 'update',
             mapper: function (it) {
                 it.field = 'decorated ' + it.field;
                 return it;

@@ -5,16 +5,21 @@
         .factory('binartaEntityReader', ['usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'restServiceHandler', BinartaEntityReaderFactory])
         .factory('binartaEntityEcho', ['usecaseAdapterFactory', 'config', 'restServiceHandler', BinartaEntityEchoFactory])
         .factory('binartaSearch', ['restServiceHandler', 'binartaEntityDecorators', 'config', BinartaSearchFactory])
-        .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaSearch', BinartaSearchController])
+        .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaSearch', '$routeParams', BinartaSearchController])
         .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'binartaEntityReader', BinartaEntityController])
-        .controller('RedirectToSearchController', ['$scope', '$location', RedirectToSearchController]);
+        .controller('RedirectToSearchController', ['$scope', '$location', RedirectToSearchController])
+        .config(['$routeProvider', function ($routeProvider) {
+            $routeProvider
+                .when('/search/:type', {templateUrl: 'partials/search/index.html', reloadOnSearch: false})
+                .when('/:locale/search/:type', {templateUrl: 'partials/search/index.html', reloadOnSearch: false});
+        }]);
 
     function BinartaSearchFactory(rest, decorators, config) {
         return function (args) {
             var decorator = decorators[args.entity + '.' + args.action + '.request'];
             var request = Object.create(args);
 
-            request.success = function(results) {
+            request.success = function (results) {
                 args.success(results.map(function (it) {
                     var decorator = decorators[args.entity + '.' + args.action];
                     return it = decorator ? decorator(it) : it;
@@ -43,7 +48,7 @@
         }
     }
 
-    function BinartaSearchController($scope, usecaseAdapterFactory, ngRegisterTopicHandler, $location, topicMessageDispatcher, search) {
+    function BinartaSearchController($scope, usecaseAdapterFactory, ngRegisterTopicHandler, $location, topicMessageDispatcher, search, $routeParams) {
         var self = this;
 
         $scope.$on('$routeUpdate', function () {
@@ -64,8 +69,15 @@
             self.action = args.context;
             $scope.decorator = args.decorator;
             $scope.filtersCustomizer = args.filtersCustomizer;
+            applyRouteTypeToFilters();
             new Initializer(args).execute();
+
+            function applyRouteTypeToFilters() {
+                if (!args.filters) args.filters = {};
+                if (!args.filters.type) args.filters.type = $routeParams.type;
+            }
         };
+
 
         function exposeSearchResultsOnScope(results) {
             if (results.length > 0) incrementOffset(results.length);
@@ -303,24 +315,56 @@
             $scope.clear();
         };
 
-        $scope.create = function () {
-            var decorator = binartaEntityDecorators[self.ctx.entity + '.add'];
+        function performHTTPRequest(args) {
+            var decorator = binartaEntityDecorators[self.ctx.entity + '.' + args.action];
+            var data = decorator ? decorator(getEntity()) : getEntity();
+            data.context = args.action;
             var request = usecaseAdapterFactory($scope);
             request.params = {
-                method: 'PUT',
+                method: args.method,
                 url: config.baseUri + 'api/entity/' + self.ctx.entity,
-                data: decorator ? decorator(getEntity()) : getEntity(),
+                data: data,
                 withCredentials: true
             };
             request.success = function (it) {
-                $scope.edit(it);
+                args.onSuccess(it);
                 if (self.ctx.onSuccess) self.ctx.onSuccess();
             };
             restServiceHandler(request);
+        }
+
+        $scope.create = function () {
+            performHTTPRequest({
+                action:'add',
+                method:'PUT',
+                onSuccess:$scope.edit
+            });
         };
 
         $scope.edit = function (args) {
             fetch({id: args.id});
+        };
+
+        $scope.update = function () {
+            performHTTPRequest({
+                action:'update',
+                method:'POST',
+                onSuccess:$scope.clear
+            });
+        };
+
+        $scope.remove = function() {
+            var request = usecaseAdapterFactory($scope);
+            request.params = {
+                method: 'DELETE',
+                url: config.baseUri + 'api/entity/' + self.ctx.entity + '?id=' + encodeURIComponent(getEntity().id),
+                withCredentials: true
+            };
+            request.success = function (it) {
+                $scope.clear();
+                if (self.ctx.onSuccess) self.ctx.onSuccess();
+            };
+            restServiceHandler(request);
         }
     }
 
