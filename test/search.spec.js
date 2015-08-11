@@ -382,6 +382,33 @@ describe('search.js', function () {
                                 });
                             });
 
+                            describe('when no more results notification is disabled', function () {
+                                beforeEach(function () {
+                                    $scope.init({noMoreResultsNotification: false});
+                                    rest.reset();
+                                    $scope.searchForMore();
+                                    request().success([]);
+                                });
+
+                                it('no notification is sent', function () {
+                                    expect(dispatcher['system.info']).toBeUndefined();
+                                });
+
+                                it('expose no more results flag on scope', function () {
+                                    expect($scope.noMoreResults).toBeTruthy();
+                                });
+
+                                describe('and when there are again more results', function () {
+                                    beforeEach(function () {
+                                        request().success(results);
+                                    });
+
+                                    it('reset no more results flag on scope', function () {
+                                        expect($scope.noMoreResults).toBeFalsy();
+                                    });
+                                });
+                            });
+
                             describe('when no items on scope', function () {
                                 beforeEach(function () {
                                     $scope.results = [];

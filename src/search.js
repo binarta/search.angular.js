@@ -67,6 +67,7 @@
         $scope.init = function (args) {
             self.entity = args.entity;
             self.action = args.context;
+            self.noMoreResultsNotification = args.noMoreResultsNotification != false;
             $scope.decorator = args.decorator;
             $scope.filtersCustomizer = args.filtersCustomizer;
             applyRouteTypeToFilters();
@@ -93,11 +94,16 @@
                 if ($scope.decorator) $scope.decorator(it);
                 $scope.results.push(it);
             });
-            if ($scope.results.length > 0 && results.length == 0)
-                topicMessageDispatcher.fire('system.info', {
-                    code: 'no.more.results.found',
-                    default: 'No more results found.'
-                });
+            if ($scope.results.length > 0 && results.length == 0) {
+                if (self.noMoreResultsNotification)
+                    topicMessageDispatcher.fire('system.info', {
+                        code: 'no.more.results.found',
+                        default: 'No more results found.'
+                    });
+                $scope.noMoreResults = true;
+            } else {
+                $scope.noMoreResults = false;
+            }
             $scope.searchForMoreLock = false;
         }
 
