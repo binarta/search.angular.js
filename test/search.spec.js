@@ -94,414 +94,427 @@ describe('search.js', function () {
             ctrl = $controller('BinartaSearchController', {$scope: $scope});
         }));
 
-        describe('on init', function () {
-            it('apply projection mask to query', function () {
-                $scope.init({mask: 'mask'});
-                $scope.search();
-                expect(request().params.data.args.mask).toEqual('mask');
-            });
-
-            describe('without autosearch', function () {
-                beforeEach(function () {
-                    $scope.init({
-                        entity: 'E',
-                        context: 'C',
-                        filters: {customField: 'F'}
-                    });
-                });
-
-                it('and query parameter is provided', inject(function ($location) {
-                    $location.search('q', 'text');
-                    $scope.init({});
-                    expect($scope.q).toEqual('text');
-                }));
-
-                describe('and locale selected', function () {
+        [
+            'scope',
+            'controller'
+        ].forEach(function (context) {
+                describe('with ' + context, function () {
+                    var ctx;
                     beforeEach(function () {
-                        topics['i18n.locale']('en');
+                        if (context == 'scope') ctx = $scope;
+                        if (context == 'controller') ctx = ctrl;
                     });
 
-                    it('no events are registered with app.start', inject(function () {
-                        expect(topics['app.start']).toBeUndefined();
-                    }));
-                });
-
-                describe('when calling search for more before search', function () {
-                    it('then no request is sent', function () {
-                        $scope.searchForMore();
-                        expect(rest.calls[0]).toBeUndefined();
-                    });
-
-                    describe('and search and search more are called', function () {
-                        beforeEach(function () {
-                            $scope.search();
-                            request().success(['R']);
-                            rest.reset();
-                            $scope.searchForMore();
+                    describe('on init', function () {
+                        it('apply projection mask to query', function () {
+                            ctx.init({mask: 'mask'});
+                            ctx.search();
+                            expect(request().params.data.args.mask).toEqual('mask');
                         });
 
-                        it('then search for more was called', function () {
-                            expect(request()).toBeDefined();
-                        });
-
-                        describe('and search is called again', function () {
+                        describe('without autosearch', function () {
                             beforeEach(function () {
-                                request().success([]);
-                                $scope.search();
+                                ctx.init({
+                                    entity: 'E',
+                                    context: 'C',
+                                    filters: {customField: 'F'}
+                                });
                             });
 
-                            describe('and before response we call search more', function () {
+                            it('and query parameter is provided', inject(function ($location) {
+                                $location.search('q', 'text');
+                                ctx.init({});
+                                expect(ctx.q).toEqual('text');
+                            }));
+
+                            describe('and locale selected', function () {
                                 beforeEach(function () {
-                                    rest.reset();
-                                    $scope.searchForMore();
+                                    topics['i18n.locale']('en');
                                 });
 
-                                it('then search for more is not executed', function () {
+                                it('no events are registered with app.start', inject(function () {
+                                    expect(topics['app.start']).toBeUndefined();
+                                }));
+                            });
+
+                            describe('when calling search for more before search', function () {
+                                it('then no request is sent', function () {
+                                    ctx.searchForMore();
                                     expect(rest.calls[0]).toBeUndefined();
-                                })
-                            });
-                        })
-                    });
-                })
-            });
-
-            describe('with autosearch', function () {
-                beforeEach(function () {
-                    $scope.init({
-                        entity: 'E',
-                        context: 'C',
-                        filters: {customField: 'F'},
-                        autosearch: true,
-                        decorator: function (it) {
-                            it.decorated = true;
-                        }
-                    });
-                });
-
-                describe('and locale selected', function () {
-                    beforeEach(function () {
-                        topics['i18n.locale']('en');
-                    });
-
-                    it('and search do rest call', function () {
-                        expect(request().params.method).toEqual('POST');
-                        expect(request().params.url).toEqual('http://host/api/query/E/C');
-                        expect(request().params.data.args).toEqual({
-                            namespace: 'N',
-                            customField: 'F',
-                            subset: {offset: 0, count: 10}
-                        });
-                        expect(request().params.headers['accept-language']).toEqual('en');
-                        expect(request().params.withCredentials).toBeTruthy();
-                    });
-
-                    it('locale param should be on data', function () {
-                        expect(request().params.data.locale).toEqual('en');
-                    });
-
-                    it('and search with query string', inject(function ($location) {
-                        $scope.q = 'query-string';
-                        $scope.search();
-                        expect(request(1).params.data.args.q).toEqual($scope.q);
-                        expect($location.search()).toEqual({q: 'query-string'});
-                    }));
-
-                    it('and search with custom filters defined through $scope', function () {
-                        $scope.filters.anotherFilter = 'X';
-                        $scope.search();
-                        expect(request(1).params.data.args.anotherFilter).toEqual('X');
-                    });
-
-                    describe('with filters customizer', function () {
-                        var success;
-
-                        beforeEach(function () {
-                            topics = {};
-                            success = true;
-                            rest.reset();
-                            $scope.init({
-                                entity: 'E',
-                                context: 'C',
-                                filters: {customField: 'F'},
-                                filtersCustomizer: function (args) {
-                                    args.filters.customized = true;
-                                    args.filters.offset = args.subset.offset;
-                                    args.filters.count = args.subset.count;
-                                    return {
-                                        then: function (s, e) {
-                                            success ? s() : e();
-                                        }
-                                    }
-                                }
-                            });
-                        });
-
-                        it('with customizer success', function () {
-                            $scope.search();
-                            expect(request().params.data.args.customized).toBeTruthy();
-                            expect(request().params.data.args.count).toEqual(request().params.data.args.subset.count);
-                            expect(request().params.data.args.offset).toEqual(request().params.data.args.subset.offset);
-                        });
-
-                        it('with customizer failure', function () {
-                            success = false;
-                            $scope.search();
-                            expect(request().params.data.args.customized).toBeTruthy();
-                        })
-                    });
-
-                    describe('and when only use the default locale', function () {
-                        beforeEach(function () {
-                            $scope.init({
-                                entity: 'E',
-                                context: 'C',
-                                autosearch: true,
-                                filters: {
-                                    locale: 'default'
-                                }
-                            });
-                        });
-
-                        it('accept default locale', function () {
-                            expect(request(1).params.headers['accept-language']).toEqual('default');
-                        });
-
-                        it('default locale param is on data', function () {
-                            expect(request(1).params.data.locale).toEqual('default');
-                        });
-                    });
-
-                    describe('and with search results', function () {
-                        var results;
-
-                        beforeEach(function () {
-                            results = [
-                                {name: 'item-1'}
-                            ];
-
-                            request().success(results);
-                        });
-
-                        it('exposed on scope', function () {
-                            expect($scope.results).toEqual(results);
-                        });
-
-                        it('subsequent searches reset results', function () {
-                            $scope.search();
-                            expect($scope.results).toEqual([]);
-                        });
-
-                        it('search results can be removed from the view', function () {
-                            results[0].remove();
-                            expect($scope.results).toEqual([]);
-                        });
-
-                        it('search results can be updated', inject(function () {
-                            results[0].update({name: 'item-1-alt'});
-                            expect(results[0].name).toEqual('item-1-alt');
-                        }));
-
-                        it('results can be decorated with decorator on parent scope', function () {
-                            expect(results[0].decorated).toBeTruthy();
-                        });
-
-                        it('results can be decorated with decorator provider', function () {
-                            $scope.init({entity: 'decorated-entity', context: 'view'});
-                            $scope.search();
-                            request(1).success([
-                                {msg: 'result'}
-                            ]);
-                            expect($scope.results[0].msg).toEqual('result');
-                            expect($scope.results[0].decoratedMsg).toEqual('decorated result');
-                        });
-
-                        describe('when searching for more', function () {
-                            beforeEach(function () {
-                                rest.reset();
-                                $scope.searchForMore();
-                            });
-
-                            it('increment offset with count', function () {
-                                expect(request().params.data.args.subset).toEqual({offset: 1, count: 10});
-                            });
-
-                            it('new searches reset the offset', function () {
-                                $scope.search();
-                                expect(request(1).params.data.args.subset).toEqual({offset: 0, count: 10});
-                            });
-
-                            describe('and more results found', function () {
-                                beforeEach(function () {
-                                    request().success(results);
                                 });
 
-                                it('append to search results', function () {
-                                    expect($scope.results.length).toEqual(2);
-                                });
-
-                                describe('and searching for more', function () {
+                                describe('and search and search more are called', function () {
                                     beforeEach(function () {
+                                        ctx.search();
+                                        request().success(['R']);
                                         rest.reset();
-                                        $scope.searchForMore();
+                                        ctx.searchForMore();
                                     });
 
-                                    it('increment offset with count', function () {
-                                        expect(request().params.data.args.subset).toEqual({offset: 2, count: 10});
+                                    it('then search for more was called', function () {
+                                        expect(request()).toBeDefined();
                                     });
+
+                                    describe('and search is called again', function () {
+                                        beforeEach(function () {
+                                            request().success([]);
+                                            ctx.search();
+                                        });
+
+                                        describe('and before response we call search more', function () {
+                                            beforeEach(function () {
+                                                rest.reset();
+                                                ctx.searchForMore();
+                                            });
+
+                                            it('then search for more is not executed', function () {
+                                                expect(rest.calls[0]).toBeUndefined();
+                                            })
+                                        });
+                                    })
+                                });
+                            })
+                        });
+
+                        describe('with autosearch', function () {
+                            beforeEach(function () {
+                                ctx.init({
+                                    entity: 'E',
+                                    context: 'C',
+                                    filters: {customField: 'F'},
+                                    autosearch: true,
+                                    decorator: function (it) {
+                                        it.decorated = true;
+                                    }
                                 });
                             });
 
-                            describe('and searching for more', function () {
+                            describe('and locale selected', function () {
                                 beforeEach(function () {
-                                    request().success([]);
-                                    rest.reset();
+                                    topics['i18n.locale']('en');
                                 });
 
-                                it('increment offset with count', function () {
-                                    $scope.searchForMore();
-                                    expect(request().params.data.args.subset).toEqual({offset: 1, count: 10});
-                                });
-
-                                it('only search for more when not working', function () {
-                                    $scope.working = true;
-                                    $scope.searchForMore();
-                                    expect(rest.calls[0]).toBeUndefined();
-                                });
-                            });
-
-                            describe('when no more are found', function () {
-                                beforeEach(function () {
-                                    request().success([]);
-                                });
-
-                                it('send notification', function () {
-                                    expect(dispatcher['system.info']).toEqual({
-                                        code: 'no.more.results.found',
-                                        default: 'No more results found.'
+                                it('and search do rest call', function () {
+                                    expect(request().params.method).toEqual('POST');
+                                    expect(request().params.url).toEqual('http://host/api/query/E/C');
+                                    expect(request().params.data.args).toEqual({
+                                        namespace: 'N',
+                                        customField: 'F',
+                                        subset: {offset: 0, count: 10}
                                     });
-                                });
-                            });
-
-                            describe('when no more results notification is disabled', function () {
-                                beforeEach(function () {
-                                    $scope.init({noMoreResultsNotification: false});
-                                    rest.reset();
-                                    $scope.searchForMore();
-                                    request().success([]);
+                                    expect(request().params.headers['accept-language']).toEqual('en');
+                                    expect(request().params.withCredentials).toBeTruthy();
                                 });
 
-                                it('no notification is sent', function () {
-                                    expect(dispatcher['system.info']).toBeUndefined();
+                                it('locale param should be on data', function () {
+                                    expect(request().params.data.locale).toEqual('en');
                                 });
 
-                                it('expose no more results flag on scope', function () {
-                                    expect($scope.noMoreResults).toBeTruthy();
+                                it('and search with query string', inject(function ($location) {
+                                    ctx.q = 'query-string';
+                                    ctx.search();
+                                    expect(request(1).params.data.args.q).toEqual(ctx.q);
+                                    expect($location.search()).toEqual({q: 'query-string'});
+                                }));
+
+                                it('and search with custom filters defined through ctx', function () {
+                                    ctx.filters.anotherFilter = 'X';
+                                    ctx.search();
+                                    expect(request(1).params.data.args.anotherFilter).toEqual('X');
                                 });
 
-                                describe('and when there are again more results', function () {
+                                describe('with filters customizer', function () {
+                                    var success;
+
                                     beforeEach(function () {
+                                        topics = {};
+                                        success = true;
+                                        rest.reset();
+                                        ctx.init({
+                                            entity: 'E',
+                                            context: 'C',
+                                            filters: {customField: 'F'},
+                                            filtersCustomizer: function (args) {
+                                                args.filters.customized = true;
+                                                args.filters.offset = args.subset.offset;
+                                                args.filters.count = args.subset.count;
+                                                return {
+                                                    then: function (s, e) {
+                                                        success ? s() : e();
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    });
+
+                                    it('with customizer success', function () {
+                                        ctx.search();
+                                        expect(request().params.data.args.customized).toBeTruthy();
+                                        expect(request().params.data.args.count).toEqual(request().params.data.args.subset.count);
+                                        expect(request().params.data.args.offset).toEqual(request().params.data.args.subset.offset);
+                                    });
+
+                                    it('with customizer failure', function () {
+                                        success = false;
+                                        ctx.search();
+                                        expect(request().params.data.args.customized).toBeTruthy();
+                                    })
+                                });
+
+                                describe('and when only use the default locale', function () {
+                                    beforeEach(function () {
+                                        ctx.init({
+                                            entity: 'E',
+                                            context: 'C',
+                                            autosearch: true,
+                                            filters: {
+                                                locale: 'default'
+                                            }
+                                        });
+                                    });
+
+                                    it('accept default locale', function () {
+                                        expect(request(1).params.headers['accept-language']).toEqual('default');
+                                    });
+
+                                    it('default locale param is on data', function () {
+                                        expect(request(1).params.data.locale).toEqual('default');
+                                    });
+                                });
+
+                                describe('and with search results', function () {
+                                    var results;
+
+                                    beforeEach(function () {
+                                        results = [
+                                            {name: 'item-1'}
+                                        ];
+
                                         request().success(results);
                                     });
 
-                                    it('reset no more results flag on scope', function () {
-                                        expect($scope.noMoreResults).toBeFalsy();
+                                    it('exposed on scope', function () {
+                                        expect(ctx.results).toEqual(results);
+                                    });
+
+                                    it('subsequent searches reset results', function () {
+                                        ctx.search();
+                                        expect(ctx.results).toEqual([]);
+                                    });
+
+                                    it('search results can be removed from the view', function () {
+                                        results[0].remove();
+                                        expect(ctx.results).toEqual([]);
+                                    });
+
+                                    it('search results can be updated', inject(function () {
+                                        results[0].update({name: 'item-1-alt'});
+                                        expect(results[0].name).toEqual('item-1-alt');
+                                    }));
+
+                                    it('results can be decorated with decorator on parent scope', function () {
+                                        expect(results[0].decorated).toBeTruthy();
+                                    });
+
+                                    it('results can be decorated with decorator provider', function () {
+                                        ctx.init({entity: 'decorated-entity', context: 'view'});
+                                        ctx.search();
+                                        request(1).success([
+                                            {msg: 'result'}
+                                        ]);
+                                        expect(ctx.results[0].msg).toEqual('result');
+                                        expect(ctx.results[0].decoratedMsg).toEqual('decorated result');
+                                    });
+
+                                    describe('when searching for more', function () {
+                                        beforeEach(function () {
+                                            rest.reset();
+                                            ctx.searchForMore();
+                                        });
+
+                                        it('increment offset with count', function () {
+                                            expect(request().params.data.args.subset).toEqual({offset: 1, count: 10});
+                                        });
+
+                                        it('new searches reset the offset', function () {
+                                            ctx.search();
+                                            expect(request(1).params.data.args.subset).toEqual({offset: 0, count: 10});
+                                        });
+
+                                        describe('and more results found', function () {
+                                            beforeEach(function () {
+                                                request().success(results);
+                                            });
+
+                                            it('append to search results', function () {
+                                                expect(ctx.results.length).toEqual(2);
+                                            });
+
+                                            describe('and searching for more', function () {
+                                                beforeEach(function () {
+                                                    rest.reset();
+                                                    ctx.searchForMore();
+                                                });
+
+                                                it('increment offset with count', function () {
+                                                    expect(request().params.data.args.subset).toEqual({offset: 2, count: 10});
+                                                });
+                                            });
+                                        });
+
+                                        describe('and searching for more', function () {
+                                            beforeEach(function () {
+                                                request().success([]);
+                                                rest.reset();
+                                            });
+
+                                            it('increment offset with count', function () {
+                                                ctx.searchForMore();
+                                                expect(request().params.data.args.subset).toEqual({offset: 1, count: 10});
+                                            });
+
+                                            it('only search for more when not working', function () {
+                                                ctx.working = true;
+                                                ctx.searchForMore();
+                                                expect(rest.calls[0]).toBeUndefined();
+                                            });
+                                        });
+
+                                        describe('when no more are found', function () {
+                                            beforeEach(function () {
+                                                request().success([]);
+                                            });
+
+                                            it('send notification', function () {
+                                                expect(dispatcher['system.info']).toEqual({
+                                                    code: 'no.more.results.found',
+                                                    default: 'No more results found.'
+                                                });
+                                            });
+                                        });
+
+                                        describe('when no more results notification is disabled', function () {
+                                            beforeEach(function () {
+                                                ctx.init({noMoreResultsNotification: false});
+                                                rest.reset();
+                                                ctx.searchForMore();
+                                                request().success([]);
+                                            });
+
+                                            it('no notification is sent', function () {
+                                                expect(dispatcher['system.info']).toBeUndefined();
+                                            });
+
+                                            it('expose no more results flag on scope', function () {
+                                                expect(ctx.noMoreResults).toBeTruthy();
+                                            });
+
+                                            describe('and when there are again more results', function () {
+                                                beforeEach(function () {
+                                                    request().success(results);
+                                                });
+
+                                                it('reset no more results flag on scope', function () {
+                                                    expect(ctx.noMoreResults).toBeFalsy();
+                                                });
+                                            });
+                                        });
+
+                                        describe('when no items on scope', function () {
+                                            beforeEach(function () {
+                                                ctx.results = [];
+                                                request().success([]);
+                                            });
+
+                                            it('no notification sent', function () {
+                                                expect(dispatcher['system.info']).toBeUndefined();
+                                            });
+                                        });
                                     });
                                 });
                             });
-
-                            describe('when no items on scope', function () {
-                                beforeEach(function () {
-                                    $scope.results = [];
-                                    request().success([]);
-                                });
-
-                                it('no notification sent', function () {
-                                    expect(dispatcher['system.info']).toBeUndefined();
-                                });
-                            });
                         });
-                    });
+
+                        it('do not subscribe for end of page events when not enabled', function () {
+                            ctx.init({});
+                            expect(topics['end.of.page']).toBeUndefined();
+                        });
+
+                        it('a custom page size can be specified on init', function () {
+                            ctx.init({subset: {count: 5}});
+                            ctx.search();
+                            expect(request().params.data.args).toEqual({namespace: 'N', subset: {offset: 0, count: 5}});
+                        });
+
+                        it('a custom sorting can be specified on init', function () {
+                            ctx.init({
+                                sortings: [
+                                    {on: 'field', orientation: 'asc'}
+                                ]
+                            });
+                            ctx.search();
+                            expect(request().params.data.args.sortings).toEqual([
+                                {on: 'field', orientation: 'asc'}
+                            ]);
+                        });
+
+                        it('on init filters can be decorated with the decorators provider', function () {
+                            ctx.init({entity: 'decorated-entity', context: 'action', filters: {field: 'msg'}});
+                            ctx.search();
+                            expect(request().params.data.args.field).toEqual('decorated msg');
+                        });
+
+                        it('decorating on init filters does not affect source', function () {
+                            ctx.init({entity: 'decorated-entity', context: 'action', filters: {field: 'msg'}});
+                            ctx.search();
+                            expect(ctx.filters.field).toEqual('msg');
+                        });
+
+                        it('when route params provides type and no type is passed to init then configure tpe', inject(function ($routeParams) {
+                            $routeParams.type = 'type';
+                            ctx.init({});
+                            ctx.search();
+                            expect(request().params.data.args.type).toEqual('type');
+                        }));
+
+                        it('when init receives type do not override it with route params', inject(function ($routeParams) {
+                            $routeParams.type = 'type';
+                            ctx.init({filters: {type: 'original'}});
+                            ctx.search();
+                            expect(request().params.data.args.type).toEqual('original');
+                        }));
+
+                        describe('view mode', function () {
+                            it('defaults to undefined', inject(function ($location) {
+                                ctx.init({});
+                                expect(ctx.viewMode).toBeUndefined();
+                                expect($location.search().viewMode).toBeUndefined();
+                            }));
+
+                            it('can be specified and exposed on scope', inject(function ($location) {
+                                ctx.init({viewMode: 'x'});
+                                expect(ctx.viewMode).toEqual('x');
+                                expect($location.search().viewMode).toEqual('x');
+                            }));
+
+                            it('view mode specified on $location overrides init', inject(function ($location) {
+                                $location.search().viewMode = 'x';
+                                ctx.init({viewMode: 'y'});
+                                expect(ctx.viewMode).toEqual('x');
+                                expect($location.search().viewMode).toEqual('x');
+                            }));
+                        });
+                    });     
                 });
             });
 
-            it('do not subscribe for end of page events when not enabled', function () {
-                $scope.init({});
-                expect(topics['end.of.page']).toBeUndefined();
-            });
-
-            it('a custom page size can be specified on init', function () {
-                $scope.init({subset: {count: 5}});
-                $scope.search();
-                expect(request().params.data.args).toEqual({namespace: 'N', subset: {offset: 0, count: 5}});
-            });
-
-            it('a custom sorting can be specified on init', function () {
-                $scope.init({
-                    sortings: [
-                        {on: 'field', orientation: 'asc'}
-                    ]
-                });
-                $scope.search();
-                expect(request().params.data.args.sortings).toEqual([
-                    {on: 'field', orientation: 'asc'}
-                ]);
-            });
-
-            it('on init filters can be decorated with the decorators provider', function () {
-                $scope.init({entity: 'decorated-entity', context: 'action', filters: {field: 'msg'}});
-                $scope.search();
-                expect(request().params.data.args.field).toEqual('decorated msg');
-            });
-
-            it('decorating on init filters does not affect source', function () {
-                $scope.init({entity: 'decorated-entity', context: 'action', filters: {field: 'msg'}});
-                $scope.search();
-                expect($scope.filters.field).toEqual('msg');
-            });
-
-            it('when route params provides type and no type is passed to init then configure tpe', inject(function ($routeParams) {
-                $routeParams.type = 'type';
-                $scope.init({});
-                $scope.search();
-                expect(request().params.data.args.type).toEqual('type');
-            }));
-
-            it('when init receives type do not override it with route params', inject(function ($routeParams) {
-                $routeParams.type = 'type';
-                $scope.init({filters: {type: 'original'}});
-                $scope.search();
-                expect(request().params.data.args.type).toEqual('original');
-            }));
-
-            describe('view mode', function () {
-                it('defaults to undefined', inject(function ($location) {
-                    $scope.init({});
-                    expect($scope.viewMode).toBeUndefined();
-                    expect($location.search().viewMode).toBeUndefined();
-                }));
-
-                it('can be specified and exposed on scope', inject(function ($location) {
-                    $scope.init({viewMode: 'x'});
-                    expect($scope.viewMode).toEqual('x');
-                    expect($location.search().viewMode).toEqual('x');
-                }));
-
-                it('view mode specified on $location overrides init', inject(function ($location) {
-                    $location.search().viewMode = 'x';
-                    $scope.init({viewMode: 'y'});
-                    expect($scope.viewMode).toEqual('x');
-                    expect($location.search().viewMode).toEqual('x');
-                }));
-
-                it('on $routeUpdate adjust view mode on $scope', inject(function ($location) {
-                    $scope.init({viewMode: 'x'});
-                    $location.search().viewMode = 'y';
-                    $scope.$broadcast('$routeUpdate');
-                    expect($scope.viewMode).toEqual('y');
-                    expect($location.search().viewMode).toEqual('y');
-                }));
-            });
-        });
+        it('on $routeUpdate adjust view mode', inject(function ($location) {
+            $location.search().viewMode = 'y';
+            $scope.$broadcast('$routeUpdate');
+            expect($scope.viewMode).toEqual('y');
+            expect(ctrl.viewMode).toEqual('y');
+            expect($location.search().viewMode).toEqual('y');
+        }));
     });
 
     describe('RedirectToSearchController', function () {

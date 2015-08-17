@@ -50,6 +50,7 @@
 
     function BinartaSearchController($scope, usecaseAdapterFactory, ngRegisterTopicHandler, $location, topicMessageDispatcher, search, $routeParams) {
         var self = this;
+        var request;
 
         $scope.$on('$routeUpdate', function () {
             exposeViewMode($location.search().viewMode);
@@ -57,54 +58,62 @@
 
         function exposeViewMode(mode) {
             $scope.viewMode = mode;
+            self.viewMode = mode;
             if (mode) $location.search().viewMode = mode;
         }
 
-        var request = usecaseAdapterFactory($scope);
-
         $scope.searchForMoreLock = true;
+        this.searchForMoreLock = true;
 
         $scope.init = function (args) {
+            init(args, $scope);
+        };
+        this.init = function (args) {
+            init(args, self);
+        };
+
+        function init(args, ctx) {
+            request = usecaseAdapterFactory(ctx);
             self.entity = args.entity;
             self.action = args.context;
             self.noMoreResultsNotification = args.noMoreResultsNotification != false;
-            $scope.decorator = args.decorator;
-            $scope.filtersCustomizer = args.filtersCustomizer;
+            ctx.decorator = args.decorator;
+            ctx.filtersCustomizer = args.filtersCustomizer;
             applyRouteTypeToFilters();
-            new Initializer(args).execute();
+            new Initializer(args, ctx).execute();
 
             function applyRouteTypeToFilters() {
                 if (!args.filters) args.filters = {};
                 if (!args.filters.type) args.filters.type = $routeParams.type;
             }
-        };
+        }
 
 
-        function exposeSearchResultsOnScope(results) {
+        function exposeSearchResultsOnScope(results, ctx) {
             if (results.length > 0) incrementOffset(results.length);
             results.forEach(function (it) {
                 it.remove = function () {
-                    $scope.results.splice($scope.results.indexOf(it), 1);
+                    ctx.results.splice(ctx.results.indexOf(it), 1);
                 };
                 it.update = function (args) {
                     Object.keys(args).forEach(function (key) {
                         it[key] = args[key];
                     });
                 };
-                if ($scope.decorator) $scope.decorator(it);
-                $scope.results.push(it);
+                if (ctx.decorator) ctx.decorator(it);
+                ctx.results.push(it);
             });
-            if ($scope.results.length > 0 && results.length == 0) {
+            if (ctx.results.length > 0 && results.length == 0) {
                 if (self.noMoreResultsNotification)
                     topicMessageDispatcher.fire('system.info', {
                         code: 'no.more.results.found',
                         default: 'No more results found.'
                     });
-                $scope.noMoreResults = true;
+                ctx.noMoreResults = true;
             } else {
-                $scope.noMoreResults = false;
+                ctx.noMoreResults = false;
             }
-            $scope.searchForMoreLock = false;
+            ctx.searchForMoreLock = false;
         }
 
         function incrementOffset(count) {
@@ -113,47 +122,57 @@
 
         var defaultSubset = {offset: 0, count: 10};
 
-        function reset() {
+        function reset(ctx) {
             self.subset = {offset: defaultSubset.offset, count: defaultSubset.count};
-            $scope.results = [];
+            ctx.results = [];
         }
 
         $scope.search = function () {
             $scope.searchForMoreLock = true;
-            reset();
-            executeSearch();
+            reset($scope);
+            executeSearch($scope);
         };
 
-        function executeSearch() {
+        this.search = function () {
+            self.searchForMoreLock = true;
+            reset(self);
+            executeSearch(self);
+        };
+
+        function executeSearch(ctx) {
             var applyFiltersAndSendRequest = function () {
-                applySearchQueryFilter();
+                applySearchQueryFilter(ctx);
                 var args = Object.create(request);
                 args.entity = self.entity;
                 args.action = self.action;
                 args.subset = self.subset;
                 args.locale = self.locale;
-                args.mask = $scope.mask;
-                args.filters = $scope.filters;
-                args.sortings = $scope.sortings;
-                args.q = $scope.q;
+                args.mask = ctx.mask;
+                args.filters = ctx.filters;
+                args.sortings = ctx.sortings;
+                args.q = ctx.q;
                 search(args);
             };
-            if ($scope.filtersCustomizer) $scope.filtersCustomizer({
-                filters: $scope.filters,
+            if (ctx.filtersCustomizer) ctx.filtersCustomizer({
+                filters: ctx.filters,
                 subset: self.subset
             }).then(applyFiltersAndSendRequest, applyFiltersAndSendRequest);
             else applyFiltersAndSendRequest();
         }
 
-        function applySearchQueryFilter() {
-            $location.search('q', $scope.q);
+        function applySearchQueryFilter(ctx) {
+            $location.search('q', ctx.q);
         }
 
         $scope.searchForMore = function () {
-            if (!$scope.working && !$scope.searchForMoreLock) executeSearch();
+            if (!$scope.working && !$scope.searchForMoreLock) executeSearch($scope);
         };
 
-        function Initializer(args) {
+        this.searchForMore = function () {
+            if (!self.working && !self.searchForMoreLock) executeSearch(self);
+        };
+
+        function Initializer(args, ctx) {
             this.execute = function () {
                 exposeMaskOnScope();
                 exposeFiltersOnScope();
@@ -161,28 +180,30 @@
                 exposeViewMode($location.search().viewMode ? $location.search().viewMode : args.viewMode);
                 if (args.subset && args.subset.count) defaultSubset.count = args.subset.count;
                 extractSearchTextFromUrl();
-                prepareRestQuery();
-                args.filters && args.filters.locale == 'default' ? withDefaultLocale($scope.search) : withLocale($scope.search);
+                prepareRestQuery(ctx);
+                args.filters && args.filters.locale == 'default' ? withDefaultLocale(ctx.search) : withLocale(ctx.search);
             };
 
             function exposeMaskOnScope() {
-                $scope.mask = args.mask;
+                ctx.mask = args.mask;
             }
 
             function exposeFiltersOnScope() {
-                $scope.filters = args.filters;
+                ctx.filters = args.filters;
             }
 
             function exposeSortingsOnScope() {
-                if (args.sortings) $scope.sortings = args.sortings;
+                if (args.sortings) ctx.sortings = args.sortings;
             }
 
             function extractSearchTextFromUrl() {
-                $scope.q = $location.search().q;
+                ctx.q = $location.search().q;
             }
 
-            function prepareRestQuery() {
-                request.success = exposeSearchResultsOnScope;
+            function prepareRestQuery(ctx) {
+                request.success = function (results) {
+                    exposeSearchResultsOnScope(results, ctx);
+                }
             }
 
             function withLocale(callback) {
