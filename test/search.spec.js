@@ -519,7 +519,7 @@ describe('search.js', function () {
 
     describe('RedirectToSearchController', function () {
         beforeEach(inject(function ($controller) {
-            ctrl = $controller('RedirectToSearchController', {$scope: $scope});
+            ctrl = $controller('RedirectToSearchController', {$scope: $scope, $routeParams: $routeParams});
         }));
 
         describe('on init', function () {
@@ -530,7 +530,7 @@ describe('search.js', function () {
             describe('and submit', function () {
                 beforeEach(function () {
                     $scope.q = 'text';
-                    $scope.locale = 'locale';
+                    $routeParams.locale = 'locale';
                     $scope.submit();
                 });
 
@@ -541,7 +541,7 @@ describe('search.js', function () {
 
                 describe('without locale', function () {
                     beforeEach(function () {
-                        $scope.locale = undefined;
+                        $routeParams.locale = undefined;
                     });
 
                     it('test', inject(function ($location) {

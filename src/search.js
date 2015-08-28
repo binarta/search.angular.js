@@ -7,7 +7,7 @@
         .factory('binartaSearch', ['restServiceHandler', 'binartaEntityDecorators', 'config', BinartaSearchFactory])
         .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaSearch', '$routeParams', BinartaSearchController])
         .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'binartaEntityReader', BinartaEntityController])
-        .controller('RedirectToSearchController', ['$scope', '$location', RedirectToSearchController])
+        .controller('RedirectToSearchController', ['$scope', '$location', '$routeParams', RedirectToSearchController])
         .config(['$routeProvider', function ($routeProvider) {
             $routeProvider
                 .when('/search/:type', {templateUrl: 'partials/search/index.html', reloadOnSearch: false})
@@ -225,7 +225,7 @@
         }
     }
 
-    function RedirectToSearchController($scope, $location) {
+    function RedirectToSearchController($scope, $location, $routeParams) {
         var self = this;
 
         $scope.init = function (args) {
@@ -238,7 +238,7 @@
         };
 
         function localizedPrefix() {
-            return $scope.locale != null ? '/' + $scope.locale : ''
+            return $routeParams.locale ? '/' + $routeParams.locale : ''
         }
     }
 
