@@ -10,8 +10,8 @@
         .controller('RedirectToSearchController', ['$scope', '$location', '$routeParams', RedirectToSearchController])
         .config(['$routeProvider', function ($routeProvider) {
             $routeProvider
-                .when('/search/:type', {templateUrl: 'partials/search/index.html', reloadOnSearch: false})
-                .when('/:locale/search/:type', {templateUrl: 'partials/search/index.html', reloadOnSearch: false});
+                .when('/search/:type', {templateUrl: 'partials/search/index.html', controller: 'BinartaSearchController as searchCtrl', reloadOnSearch: false})
+                .when('/:locale/search/:type', {templateUrl: 'partials/search/index.html', controller: 'BinartaSearchController as searchCtrl', reloadOnSearch: false});
         }]);
 
     function BinartaSearchFactory(rest, decorators, config) {
