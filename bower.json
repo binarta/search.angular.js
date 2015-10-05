@@ -23,8 +23,5 @@
     "node_modules",
     "bower_components",
     "test"
-  ],
-  "resolutions": {
-    "angular": "1.3.*"
-  }
+  ]
 }

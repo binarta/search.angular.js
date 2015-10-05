@@ -321,7 +321,7 @@
             binartaEntityReader({
                 $scope: $scope,
                 entity: self.ctx.entity,
-                request: {id: args.id},
+                request: args,
                 success: setEntity
             });
         }
@@ -331,7 +331,10 @@
             $scope.refresh = function () {
                 $scope.init(args)
             };
-            fetch({id: self.ctx.id || $location.search()[args.queryParam] || $routeParams.id});
+            var queryParams = {};
+            queryParams[args.redirectIdToField||'id'] = self.ctx.id || $location.search()[args.queryParam] || $routeParams.id;
+            if(args.namedQuery) queryParams.context = args.namedQuery;
+            fetch(queryParams);
             if (self.ctx.queryParam) $scope.$on('$routeUpdate', function (evt, args) {
                 if (args.params[self.ctx.queryParam]) fetch({id: args.params[self.ctx.queryParam]});
             });

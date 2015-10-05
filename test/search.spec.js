@@ -616,6 +616,20 @@ describe('search.js', function () {
                 }));
             });
 
+            describe('on init with named query', function() {
+                beforeEach(function() {
+                    $scope.init({
+                        entity:'E',
+                        namedQuery:'findByNamedQuery',
+                        redirectIdToField:'customId'
+                    });
+                });
+
+                it('fetch entity from server', function () {
+                    expect(request().params.params).toEqual({namespace: 'N', context:'findByNamedQuery', customId: 'id', treatInputAsId: true});
+                });
+            });
+
             describe('on init', function () {
                 beforeEach(function () {
                     $scope.init({
