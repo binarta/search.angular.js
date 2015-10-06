@@ -2,6 +2,7 @@
   "name": "binarta.search.angular",
   "main": [
     "./src/search.js",
+    "./src/search-tpls-bootstrap3.js",
     "./metadata-system.json"
   ],
   "dependencies": {

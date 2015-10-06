@@ -1,16 +1,24 @@
 {
   "msgs":{
     "nl":{
-      "no.more.results.found": "Geen verdere resultaten."
+      "search.no.more.results": "Geen verdere resultaten.",
+      "search.no.items.found.message": "No items to show",
+      "search.for.more.button": "Show next results"
     },
     "en":{
-      "no.more.results.found": "No more results found."
+      "search.no.more.results": "No more results found.",
+      "search.no.items.found.message": "No items to show",
+      "search.for.more.button": "Show next results"
     },
     "fr":{
-      "no.more.results.found": "Plus de résultats trouvés."
+      "search.no.more.results": "Plus de résultats trouvés.",
+      "search.no.items.found.message": "No items to show",
+      "search.for.more.button": "Show next results"
     },
     "de":{
-      "no.more.results.found": "Keine weiteren Ergebnisse."
+      "search.no.more.results": "Keine weiteren Ergebnisse.",
+      "search.no.items.found.message": "No items to show",
+      "search.for.more.button": "Show next results"
     }
   }
 }
