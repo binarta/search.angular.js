@@ -2,8 +2,8 @@
   "msgs":{
     "nl":{
       "search.no.more.results": "Geen verdere resultaten.",
-      "search.no.items.found.message": "No items to show",
-      "search.for.more.button": "Show next results"
+      "search.no.items.found.message": "Geen items om te tonen",
+      "search.for.more.button": "Toon volgende resultaten"
     },
     "en":{
       "search.no.more.results": "No more results found.",
