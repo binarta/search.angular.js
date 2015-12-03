@@ -22,6 +22,7 @@
         <div class="col-xs-12">
             <button type="button" class="btn btn-primary btn-search-more" ng-click="searchCtrl.searchForMore()"
                     ng-disabled="searchCtrl.working"
+                    in-view="$inview&&infiniteScrolling&&searchCtrl.searchForMore()"
                     i18n code="search.for.more.button" read-only>
                 <span ng-if="searchCtrl.working"><i class="fa fa-spinner fa-spin fa-fw"></i></span>
                 <span ng-if="!searchCtrl.working"><i class="fa fa-angle-down fa-fw"></i></span>
