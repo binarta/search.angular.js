@@ -12,8 +12,8 @@
     },
     "fr":{
       "search.no.more.results": "Plus de résultats trouvés.",
-      "search.no.items.found.message": "No items to show",
-      "search.for.more.button": "Show next results"
+      "search.no.items.found.message": "Aucun élément à afficher",
+      "search.for.more.button": "Prochain résultats"
     },
     "de":{
       "search.no.more.results": "Keine weiteren Ergebnisse.",
