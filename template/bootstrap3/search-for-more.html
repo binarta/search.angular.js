@@ -3,10 +3,10 @@
         <i class="fa fa-spinner fa-spin fa-3x text-muted"></i>
     </div>
     <div class="bin-state-empty" ng-hide="searchCtrl.working">
-        <div class="bin-empty-visual">
+        <div class="bin-status-visual">
             <i class="fa" ng-class="searchCtrl.q ? 'fa-search' : 'fa-cloud'"></i>
         </div>
-        <h3 class="bin-empty-title" i18n code="search.no.items.found.message" read-only ng-bind="::var"></h3>
+        <h3 class="bin-status-visual-title" i18n code="search.no.items.found.message" read-only ng-bind="::var"></h3>
     </div>
 </div>
 <div ng-show="searchCtrl.results.length > 0">
