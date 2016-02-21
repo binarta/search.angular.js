@@ -757,6 +757,10 @@ describe('search.js', function () {
                         expect($scope.entity).toEqual({id: '/id'});
                     });
 
+                    it('test', function() {
+                        expect(dispatcher['binarta.entity.loaded']).toEqual($scope.entity);
+                    });
+
                     describe('on update', function () {
                         beforeEach(function () {
                             $scope.update();

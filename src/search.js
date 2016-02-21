@@ -6,7 +6,7 @@
         .factory('binartaEntityEcho', ['usecaseAdapterFactory', 'config', 'restServiceHandler', BinartaEntityEchoFactory])
         .factory('binartaSearch', ['restServiceHandler', 'binartaEntityDecorators', 'config', BinartaSearchFactory])
         .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaSearch', '$routeParams', BinartaSearchController])
-        .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'binartaEntityReader', BinartaEntityController])
+        .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'binartaEntityReader', 'topicMessageDispatcher', BinartaEntityController])
         .controller('RedirectToSearchController', ['$scope', '$location', '$routeParams', RedirectToSearchController])
         .config(['$routeProvider', function ($routeProvider) {
             $routeProvider
@@ -296,11 +296,12 @@
         }
     }
 
-    function BinartaEntityController($scope, $location, $routeParams, restServiceHandler, usecaseAdapterFactory, config, binartaEntityDecorators, binartaEntityReader) {
+    function BinartaEntityController($scope, $location, $routeParams, restServiceHandler, usecaseAdapterFactory, config, binartaEntityDecorators, binartaEntityReader, topicMessageDispatcher) {
         var self = this;
 
         function setEntity(entity) {
             $scope[self.ctx.var || 'entity'] = entity;
+            topicMessageDispatcher.fire('binarta.entity.loaded', entity);
         }
 
         function getEntity() {
