@@ -5,7 +5,7 @@
         .factory('binartaEntityReader', ['usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'restServiceHandler', BinartaEntityReaderFactory])
         .factory('binartaEntityEcho', ['usecaseAdapterFactory', 'config', 'restServiceHandler', BinartaEntityEchoFactory])
         .factory('binartaSearch', ['restServiceHandler', 'binartaEntityDecorators', 'config', BinartaSearchFactory])
-        .controller('BinartaSearchController', ['$scope', 'usecaseAdapterFactory', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaSearch', '$routeParams', BinartaSearchController])
+        .controller('BinartaSearchController', ['$scope', 'config', 'usecaseAdapterFactory', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaSearch', '$routeParams', BinartaSearchController])
         .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'binartaEntityReader', 'topicMessageDispatcher', BinartaEntityController])
         .controller('RedirectToSearchController', ['$scope', '$location', '$routeParams', RedirectToSearchController])
         .config(['$routeProvider', function ($routeProvider) {
@@ -48,7 +48,7 @@
         }
     }
 
-    function BinartaSearchController($scope, usecaseAdapterFactory, ngRegisterTopicHandler, $location, topicMessageDispatcher, search, $routeParams) {
+    function BinartaSearchController($scope, config, usecaseAdapterFactory, ngRegisterTopicHandler, $location, topicMessageDispatcher, search, $routeParams) {
         var self = this;
         var request;
 
@@ -73,6 +73,7 @@
         };
 
         function init(args, ctx) {
+            applySearchSettings();
             request = usecaseAdapterFactory(ctx);
             self.entity = args.entity;
             self.action = args.context;
@@ -81,6 +82,16 @@
             ctx.filtersCustomizer = args.filtersCustomizer;
             applyRouteTypeToFilters();
             new Initializer(args, ctx).execute();
+
+            function applySearchSettings() {
+                if (args.settings && config.searchSettings && config.searchSettings[args.settings]) {
+                    var template = config.searchSettings[args.settings];
+                    if (template.filters) {
+                        args.filters = angular.extend(template.filters, args.filters);
+                    }
+                    args = angular.extend(template, args);
+                }
+            }
 
             function applyRouteTypeToFilters() {
                 if (!args.filters) args.filters = {};

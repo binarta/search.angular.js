@@ -1,9 +1,10 @@
 describe('search.js', function () {
-    var ctrl, $scope, rest, topics, dispatcher, $routeParams;
+    var ctrl, $scope, rest, topics, dispatcher, $routeParams, config;
 
     beforeEach(module('binarta.search'));
     beforeEach(module('test.app'));
-    beforeEach(inject(function ($rootScope, restServiceHandler, config, topicRegistryMock, topicMessageDispatcherMock) {
+    beforeEach(inject(function ($rootScope, restServiceHandler, _config_, topicRegistryMock, topicMessageDispatcherMock) {
+        config = _config_;
         $scope = $rootScope.$new();
         $routeParams = {};
         rest = restServiceHandler;
@@ -483,6 +484,48 @@ describe('search.js', function () {
                             ctx.search();
                             expect(request().params.data.args.type).toEqual('original');
                         }));
+
+                        describe('when init with search template defined', function () {
+                            beforeEach(function () {
+                                config.searchSettings = {
+                                    name: {
+                                        entity: 'entity',
+                                        context: 'action',
+                                        filters:{
+                                            locale: 'default',
+                                            customField: 'custom',
+                                            sortings: [
+                                                {on:'on'}
+                                            ]
+                                        },
+                                        autosearch:true,
+                                        subset:{count:1}
+                                    }
+                                }
+                            });
+
+                            it('use template settings', function () {
+                                ctx.init({settings: 'name'});
+
+                                expect(request().params.url).toEqual('http://host/api/query/entity/action');
+                                expect(request().params.data.args.customField).toEqual('custom');
+                                expect(request().params.data.args.subset.count).toEqual(1);
+                            });
+
+                            it('template settings can be overridden', function () {
+                                ctx.init({settings: 'name', context:'override'});
+
+                                expect(request().params.url).toEqual('http://host/api/query/entity/override');
+                            });
+
+                            it('filters are extended', function () {
+                                ctx.init({settings: 'name', filters: {extraField: 'extra', sortings: [{on: 'new'}]}});
+
+                                expect(request().params.data.args.customField).toEqual('custom');
+                                expect(request().params.data.args.extraField).toEqual('extra');
+                                expect(request().params.data.args.sortings).toEqual([{on: 'new'}]);
+                            });
+                        });
 
                         describe('view mode', function () {
                             it('defaults to undefined', inject(function ($location) {
