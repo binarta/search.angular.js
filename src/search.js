@@ -85,7 +85,7 @@
 
             function applySearchSettings() {
                 if (args.settings && config.searchSettings && config.searchSettings[args.settings]) {
-                    var template = config.searchSettings[args.settings];
+                    var template = angular.copy(config.searchSettings[args.settings]);
                     if (template.filters) {
                         args.filters = angular.extend(template.filters, args.filters);
                     }

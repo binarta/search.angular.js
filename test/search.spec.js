@@ -525,6 +525,12 @@ describe('search.js', function () {
                                 expect(request().params.data.args.extraField).toEqual('extra');
                                 expect(request().params.data.args.sortings).toEqual([{on: 'new'}]);
                             });
+
+                            it('settings in config are not modified', function () {
+                                ctx.init({settings: 'name', context:'override'});
+
+                                expect(config.searchSettings.name.context).toEqual('action');
+                            });
                         });
 
                         describe('view mode', function () {
