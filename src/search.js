@@ -101,6 +101,7 @@
 
 
         function exposeSearchResultsOnScope(results, ctx) {
+            if (!ctx.results) ctx.results = [];
             if (results.length > 0) incrementOffset(results.length);
             results.forEach(function (it) {
                 it.remove = function () {
@@ -135,7 +136,7 @@
 
         function reset(ctx) {
             self.subset = {offset: defaultSubset.offset, count: defaultSubset.count};
-            ctx.results = [];
+            ctx.results = undefined;
         }
 
         $scope.search = function () {

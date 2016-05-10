@@ -300,7 +300,7 @@ describe('search.js', function () {
 
                                     it('subsequent searches reset results', function () {
                                         ctx.search();
-                                        expect(ctx.results).toEqual([]);
+                                        expect(ctx.results).toBeUndefined();
                                     });
 
                                     it('search results can be removed from the view', function () {
