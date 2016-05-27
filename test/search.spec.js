@@ -50,6 +50,14 @@ describe('search.js', function () {
             expect(request().params.withCredentials).toBeTruthy();
         });
 
+        it('and search with carousel items', function () {
+            search({
+                includeCarouselItems: true
+            });
+
+            expect(request().params.headers['X-Binarta-Carousel']).toBeTruthy();
+        });
+
         it('and search with query string', function () {
             search({q: 'query-string'});
             expect(request().params.data.args.q).toEqual('query-string');
@@ -484,6 +492,14 @@ describe('search.js', function () {
                             ctx.search();
                             expect(request().params.data.args.type).toEqual('original');
                         }));
+
+                        it('when init and include carousel items', function () {
+                            ctx.init({
+                                includeCarouselItems: true
+                            });
+                            ctx.search();
+                            expect(request().params.headers['X-Binarta-Carousel']).toBeTruthy();
+                        });
 
                         describe('when init with search template defined', function () {
                             beforeEach(function () {

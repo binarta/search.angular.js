@@ -32,6 +32,7 @@
                 data: {args: {namespace: config.namespace, subset: args.subset}, locale: args.locale},
                 withCredentials: true
             };
+            if (args.includeCarouselItems) request.params.headers['X-Binarta-Carousel'] = true;
             if (args.q) request.params.data.args.q = args.q;
             if (args.mask) request.params.data.args.mask = args.mask;
             if (args.sortings) request.params.data.args.sortings = args.sortings;
@@ -75,6 +76,7 @@
         function init(args, ctx) {
             applySearchSettings();
             request = usecaseAdapterFactory(ctx);
+            request.includeCarouselItems = args.includeCarouselItems;
             self.entity = args.entity;
             self.action = args.context;
             self.noMoreResultsNotification = args.noMoreResultsNotification != false;
