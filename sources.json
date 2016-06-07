@@ -1,0 +1,6 @@
+{
+  "default": {
+    "search": "bower_components/binarta.search.angular/src/search.js",
+    "search.templates": "bower_components/binarta.search.angular/src/search-tpls-bootstrap3.js"
+  }
+}

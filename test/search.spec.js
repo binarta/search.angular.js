@@ -16,7 +16,7 @@ describe('search.js', function () {
 
     function request(idx) {
         if (!idx) idx = 0;
-        return rest.calls[idx].args[0];
+        return rest.calls.argsFor(idx)[0];
     }
 
     describe('binartaSearch', function () {
@@ -149,14 +149,14 @@ describe('search.js', function () {
                             describe('when calling search for more before search', function () {
                                 it('then no request is sent', function () {
                                     ctx.searchForMore();
-                                    expect(rest.calls[0]).toBeUndefined();
+                                    expect(rest.calls.first()).toBeUndefined();
                                 });
 
                                 describe('and search and search more are called', function () {
                                     beforeEach(function () {
                                         ctx.search();
                                         request().success(['R']);
-                                        rest.reset();
+                                        rest.calls.reset();
                                         ctx.searchForMore();
                                     });
 
@@ -172,12 +172,12 @@ describe('search.js', function () {
 
                                         describe('and before response we call search more', function () {
                                             beforeEach(function () {
-                                                rest.reset();
+                                                rest.calls.reset();
                                                 ctx.searchForMore();
                                             });
 
                                             it('then search for more is not executed', function () {
-                                                expect(rest.calls[0]).toBeUndefined();
+                                                expect(rest.calls.first()).toBeUndefined();
                                             })
                                         });
                                     })
@@ -209,6 +209,7 @@ describe('search.js', function () {
                                     expect(request().params.data.args).toEqual({
                                         namespace: 'N',
                                         customField: 'F',
+                                        type: undefined,
                                         subset: {offset: 0, count: 10}
                                     });
                                     expect(request().params.headers['accept-language']).toEqual('en');
@@ -238,7 +239,7 @@ describe('search.js', function () {
                                     beforeEach(function () {
                                         topics = {};
                                         success = true;
-                                        rest.reset();
+                                        rest.calls.reset();
                                         ctx.init({
                                             entity: 'E',
                                             context: 'C',
@@ -337,7 +338,7 @@ describe('search.js', function () {
 
                                     describe('when searching for more', function () {
                                         beforeEach(function () {
-                                            rest.reset();
+                                            rest.calls.reset();
                                             ctx.searchForMore();
                                         });
 
@@ -361,7 +362,7 @@ describe('search.js', function () {
 
                                             describe('and searching for more', function () {
                                                 beforeEach(function () {
-                                                    rest.reset();
+                                                    rest.calls.reset();
                                                     ctx.searchForMore();
                                                 });
 
@@ -374,7 +375,7 @@ describe('search.js', function () {
                                         describe('and searching for more', function () {
                                             beforeEach(function () {
                                                 request().success([]);
-                                                rest.reset();
+                                                rest.calls.reset();
                                             });
 
                                             it('increment offset with count', function () {
@@ -385,7 +386,7 @@ describe('search.js', function () {
                                             it('only search for more when not working', function () {
                                                 ctx.working = true;
                                                 ctx.searchForMore();
-                                                expect(rest.calls[0]).toBeUndefined();
+                                                expect(rest.calls.first()).toBeUndefined();
                                             });
                                         });
 
@@ -405,7 +406,7 @@ describe('search.js', function () {
                                         describe('when no more results notification is disabled', function () {
                                             beforeEach(function () {
                                                 ctx.init({noMoreResultsNotification: false});
-                                                rest.reset();
+                                                rest.calls.reset();
                                                 ctx.searchForMore();
                                                 request().success([]);
                                             });
@@ -452,7 +453,7 @@ describe('search.js', function () {
                         it('a custom page size can be specified on init', function () {
                             ctx.init({subset: {count: 5}});
                             ctx.search();
-                            expect(request().params.data.args).toEqual({namespace: 'N', subset: {offset: 0, count: 5}});
+                            expect(request().params.data.args).toEqual({namespace: 'N', type: undefined, subset: {offset: 0, count: 5}});
                         });
 
                         it('a custom sorting can be specified on init', function () {
@@ -673,12 +674,12 @@ describe('search.js', function () {
                     });
                 });
 
-                it('when query param is undefined do nothin on route update', inject(function ($location) {
+                it('when query param is undefined do nothin on route update', function () {
                     request().success('result');
                     $scope.$broadcast('$routeUpdate', {params: {}});
                     expect($scope.entity).toEqual('result');
-                    expect(rest.calls[1]).toBeUndefined();
-                }));
+                    expect(rest.calls.count()).toEqual(1);
+                });
             });
 
             describe('on init with named query', function() {
@@ -740,7 +741,7 @@ describe('search.js', function () {
 
                     it('do nothing', function () {
                         expect($scope.entity).toEqual('result');
-                        expect(rest.calls[1]).toBeUndefined();
+                        expect(rest.calls.count()).toEqual(1);
                     });
                 })
             });
