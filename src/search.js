@@ -102,8 +102,18 @@
         }
 
 
+        function flagForMoreResultsAndDropExcessElements(results, ctx) {
+            if (results.length == self.subset.count + 1) {
+                ctx.hasMoreResults = true;
+                results.splice(-1, 1);
+            } else {
+                ctx.hasMoreResults = false;
+            }
+        }
+
         function exposeSearchResultsOnScope(results, ctx) {
             if (!ctx.results) ctx.results = [];
+            flagForMoreResultsAndDropExcessElements(results, ctx);
             if (results.length > 0) incrementOffset(results.length);
             results.forEach(function (it) {
                 it.remove = function () {
@@ -159,7 +169,7 @@
                 var args = Object.create(request);
                 args.entity = self.entity;
                 args.action = self.action;
-                args.subset = self.subset;
+                args.subset = getIncrementedSubset();
                 args.locale = self.locale;
                 args.mask = ctx.mask;
                 args.filters = ctx.filters;
@@ -169,13 +179,20 @@
             };
             if (ctx.filtersCustomizer) ctx.filtersCustomizer({
                 filters: ctx.filters,
-                subset: self.subset
+                subset: getIncrementedSubset()
             }).then(applyFiltersAndSendRequest, applyFiltersAndSendRequest);
             else applyFiltersAndSendRequest();
         }
 
         function applySearchQueryFilter(ctx) {
             $location.search('q', ctx.q);
+        }
+
+        function getIncrementedSubset() {
+            return {
+                offset: self.subset.offset,
+                count: self.subset.count + 1
+            }
         }
 
         $scope.searchForMore = function () {

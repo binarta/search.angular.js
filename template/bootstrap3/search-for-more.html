@@ -10,15 +10,7 @@
     </div>
 </div>
 <div ng-show="searchCtrl.results.length > 0">
-    <div class="row" ng-if="searchCtrl.noMoreResults">
-        <div class="col-xs-12">
-            <div class="alert" ng-class="{'alert-info': !searchCtrl.working}"
-                 i18n code="search.no.more.results" read-only>
-                <i class="fa fa-info-circle fa-fw"></i> {{::var}}
-            </div>
-        </div>
-    </div>
-    <div class="row">
+    <div class="row" ng-if="searchCtrl.hasMoreResults">
         <div class="col-xs-12">
             <button type="button" class="btn btn-primary btn-search-more" ng-click="searchCtrl.searchForMore()"
                     ng-disabled="searchCtrl.working"

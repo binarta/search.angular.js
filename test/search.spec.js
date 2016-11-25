@@ -210,7 +210,7 @@ describe('search.js', function () {
                                         namespace: 'N',
                                         customField: 'F',
                                         type: undefined,
-                                        subset: {offset: 0, count: 10}
+                                        subset: {offset: 0, count: 11}
                                     });
                                     expect(request().params.headers['accept-language']).toEqual('en');
                                     expect(request().params.withCredentials).toBeTruthy();
@@ -297,13 +297,24 @@ describe('search.js', function () {
 
                                     beforeEach(function () {
                                         results = [
-                                            {name: 'item-1'}
+                                            {name: 'item-1'},
+                                            {name: 'item-2'},
+                                            {name: 'item-3'},
+                                            {name: 'item-4'},
+                                            {name: 'item-5'},
+                                            {name: 'item-6'},
+                                            {name: 'item-7'},
+                                            {name: 'item-8'},
+                                            {name: 'item-9'},
+                                            {name: 'item-10'},
+                                            {name: 'item-11'}
                                         ];
 
                                         request().success(results);
                                     });
 
                                     it('exposed on scope', function () {
+                                        results.splice(-1, 1);
                                         expect(ctx.results).toEqual(results);
                                     });
 
@@ -314,7 +325,7 @@ describe('search.js', function () {
 
                                     it('search results can be removed from the view', function () {
                                         results[0].remove();
-                                        expect(ctx.results).toEqual([]);
+                                        expect(ctx.results).toEqual(results.slice(1, -1));
                                     });
 
                                     it('search results can be updated', inject(function () {
@@ -336,19 +347,26 @@ describe('search.js', function () {
                                         expect(ctx.results[0].decoratedMsg).toEqual('decorated result');
                                     });
 
+                                    it('context gets flagged as having more results', function() {
+                                        expect(ctx.hasMoreResults).toBeTruthy();
+                                    });
+
                                     describe('when searching for more', function () {
                                         beforeEach(function () {
+                                            results = [
+                                                {name:'item-11'}
+                                            ];
                                             rest.calls.reset();
                                             ctx.searchForMore();
                                         });
 
                                         it('increment offset with count', function () {
-                                            expect(request().params.data.args.subset).toEqual({offset: 1, count: 10});
+                                            expect(request().params.data.args.subset).toEqual({offset: 10, count: 11});
                                         });
 
                                         it('new searches reset the offset', function () {
                                             ctx.search();
-                                            expect(request(1).params.data.args.subset).toEqual({offset: 0, count: 10});
+                                            expect(request(1).params.data.args.subset).toEqual({offset: 0, count: 11});
                                         });
 
                                         describe('and more results found', function () {
@@ -357,7 +375,11 @@ describe('search.js', function () {
                                             });
 
                                             it('append to search results', function () {
-                                                expect(ctx.results.length).toEqual(2);
+                                                expect(ctx.results.length).toEqual(11);
+                                            });
+
+                                            it('then context is flagged as having no more results', function() {
+                                                expect(ctx.hasMoreResults).toBeFalsy();
                                             });
 
                                             describe('and searching for more', function () {
@@ -367,7 +389,7 @@ describe('search.js', function () {
                                                 });
 
                                                 it('increment offset with count', function () {
-                                                    expect(request().params.data.args.subset).toEqual({offset: 2, count: 10});
+                                                    expect(request().params.data.args.subset).toEqual({offset: 11, count: 11});
                                                 });
                                             });
                                         });
@@ -380,7 +402,7 @@ describe('search.js', function () {
 
                                             it('increment offset with count', function () {
                                                 ctx.searchForMore();
-                                                expect(request().params.data.args.subset).toEqual({offset: 1, count: 10});
+                                                expect(request().params.data.args.subset).toEqual({offset: 10, count: 11});
                                             });
 
                                             it('only search for more when not working', function () {
@@ -453,7 +475,7 @@ describe('search.js', function () {
                         it('a custom page size can be specified on init', function () {
                             ctx.init({subset: {count: 5}});
                             ctx.search();
-                            expect(request().params.data.args).toEqual({namespace: 'N', type: undefined, subset: {offset: 0, count: 5}});
+                            expect(request().params.data.args).toEqual({namespace: 'N', type: undefined, subset: {offset: 0, count: 6}});
                         });
 
                         it('a custom sorting can be specified on init', function () {
@@ -526,7 +548,7 @@ describe('search.js', function () {
 
                                 expect(request().params.url).toEqual('http://host/api/query/entity/action');
                                 expect(request().params.data.args.customField).toEqual('custom');
-                                expect(request().params.data.args.subset.count).toEqual(1);
+                                expect(request().params.data.args.subset.count).toEqual(2);
                             });
 
                             it('template settings can be overridden', function () {
