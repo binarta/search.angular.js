@@ -1,9 +1,9 @@
 describe('search.js', function () {
-    var ctrl, $scope, rest, topics, dispatcher, $routeParams, config;
+    var ctrl, $scope, rest, topics, dispatcher, $routeParams, config, binarta;
 
     beforeEach(module('binarta.search'));
     beforeEach(module('test.app'));
-    beforeEach(inject(function ($rootScope, restServiceHandler, _config_, topicRegistryMock, topicMessageDispatcherMock) {
+    beforeEach(inject(function ($rootScope, restServiceHandler, _config_, topicRegistryMock, topicMessageDispatcherMock, _binarta_) {
         config = _config_;
         $scope = $rootScope.$new();
         $routeParams = {};
@@ -12,11 +12,16 @@ describe('search.js', function () {
         dispatcher = topicMessageDispatcherMock;
         config.namespace = 'N';
         config.baseUri = 'http://host/';
+        binarta = _binarta_;
     }));
 
     function request(idx) {
         if (!idx) idx = 0;
         return rest.calls.argsFor(idx)[0];
+    }
+
+    function triggerBinartaSchedule() {
+        binarta.application.adhesiveReading.read('-');
     }
 
     describe('binartaSearch', function () {
@@ -27,6 +32,7 @@ describe('search.js', function () {
 
         it('apply projection mask to query', function () {
             search({mask: 'mask'});
+            triggerBinartaSchedule();
             expect(request().params.data.args.mask).toEqual('mask');
         });
 
@@ -38,6 +44,7 @@ describe('search.js', function () {
                 subset: {offset: 0, count: 10},
                 locale: 'en'
             });
+            triggerBinartaSchedule();
             expect(request().params.method).toEqual('POST');
             expect(request().params.url).toEqual('http://host/api/query/E/C');
             expect(request().params.data.args).toEqual({
@@ -54,13 +61,44 @@ describe('search.js', function () {
             search({
                 includeCarouselItems: true
             });
-
+            triggerBinartaSchedule();
             expect(request().params.headers['X-Binarta-Carousel']).toBeTruthy();
         });
 
         it('and search with query string', function () {
             search({q: 'query-string'});
+            triggerBinartaSchedule();
             expect(request().params.data.args.q).toEqual('query-string');
+        });
+
+        describe('and search without locale param', function () {
+            describe('and no supported languages', function () {
+                beforeEach(function () {
+                    binarta.application.gateway.updateApplicationProfile({supportedLanguages: []});
+                    binarta.application.refresh();
+                    binarta.application.setLocaleForPresentation();
+                    search({});
+                    triggerBinartaSchedule();
+                });
+
+                it('set locale on request', function () {
+                    expect(request().params.data.locale).toEqual('default');
+                });
+            });
+
+            describe('with supported languages', function () {
+                beforeEach(function () {
+                    binarta.application.gateway.updateApplicationProfile({supportedLanguages: ['en', 'nl']});
+                    binarta.application.refresh();
+                    binarta.application.setLocaleForPresentation('en');
+                    search({});
+                    triggerBinartaSchedule();
+                });
+
+                it('set locale for presentation on request', function () {
+                    expect(request().params.data.locale).toEqual('en');
+                });
+            });
         });
 
         describe('and with search results', function () {
@@ -75,6 +113,7 @@ describe('search.js', function () {
                     actual = it;
                 };
                 search({success: success});
+                triggerBinartaSchedule();
                 request().success(expected);
             });
 
@@ -94,6 +133,7 @@ describe('search.js', function () {
 
         it('filters can be decorated with the decorators provider', function () {
             search({entity: 'decorated-entity', action: 'action', filters: {field: 'msg'}});
+            triggerBinartaSchedule();
             expect(request().params.data.args.field).toEqual('decorated msg');
         });
     });
@@ -101,6 +141,7 @@ describe('search.js', function () {
     describe('BinartaSearchController', function () {
         beforeEach(inject(function ($controller) {
             ctrl = $controller('BinartaSearchController', {$scope: $scope});
+            triggerBinartaSchedule();
         }));
 
         [

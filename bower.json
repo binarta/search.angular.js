@@ -1,13 +1,9 @@
 {
   "name": "binarta.search.angular",
-  "main": [
-    "./src/search.js",
-    "./src/search-tpls-bootstrap3.js",
-    "./metadata-system.json",
-    "./sources.json"
-  ],
+  "main": "./src/search.js",
   "dependencies": {
     "binarta.angularx": "0.*.*",
+    "binartajs-angular1": "1.*.*",
     "binarta.usecase.adapter.angular": "0.*.*",
     "binarta.rest.client.angular": "0.*.*",
     "binarta.config.angular": "0.*.*",

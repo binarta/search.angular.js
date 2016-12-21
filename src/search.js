@@ -1,10 +1,10 @@
 (function () {
-    angular.module('binarta.search', ['ngRoute', 'angular.usecase.adapter', 'rest.client', 'config', 'notifications'])
+    angular.module('binarta.search', ['ngRoute', 'angular.usecase.adapter', 'rest.client', 'config', 'notifications', 'binarta-applicationjs-angular1'])
         .provider('binartaEntityDecorators', BinartaEntityDecoratorsFactory)
         .factory('binartaEntityExists', ['usecaseAdapterFactory', 'config', 'restServiceHandler', BinartaEntityExistsFactory])
         .factory('binartaEntityReader', ['usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'restServiceHandler', BinartaEntityReaderFactory])
         .factory('binartaEntityEcho', ['usecaseAdapterFactory', 'config', 'restServiceHandler', BinartaEntityEchoFactory])
-        .factory('binartaSearch', ['restServiceHandler', 'binartaEntityDecorators', 'config', BinartaSearchFactory])
+        .factory('binartaSearch', ['restServiceHandler', 'binartaEntityDecorators', 'config', 'binarta', BinartaSearchFactory])
         .controller('BinartaSearchController', ['$scope', 'config', 'usecaseAdapterFactory', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaSearch', '$routeParams', BinartaSearchController])
         .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'binartaEntityReader', 'topicMessageDispatcher', BinartaEntityController])
         .controller('RedirectToSearchController', ['$scope', '$location', '$routeParams', RedirectToSearchController])
@@ -14,38 +14,47 @@
                 .when('/:locale/search/:type', {templateUrl: 'partials/search/index.html', controller: 'BinartaSearchController as searchCtrl', reloadOnSearch: false});
         }]);
 
-    function BinartaSearchFactory(rest, decorators, config) {
+    function BinartaSearchFactory(rest, decorators, config, binarta) {
         return function (args) {
-            var decorator = decorators[args.entity + '.' + args.action + '.request'];
-            var request = Object.create(args);
+            binarta.schedule(function () {
+                var decorator = decorators[args.entity + '.' + args.action + '.request'];
+                var request = Object.create(args);
 
-            request.success = function (results) {
-                args.success(results.map(function (it) {
-                    var decorator = decorators[args.entity + '.' + args.action];
-                    return it = decorator ? decorator(it) : it;
-                }));
-            };
-            request.params = {
-                method: 'POST',
-                url: config.baseUri + 'api/query/' + args.entity + '/' + args.action,
-                headers: {'accept-language': args.locale},
-                data: {args: {namespace: config.namespace, subset: args.subset}, locale: args.locale},
-                withCredentials: true
-            };
-            if (args.includeCarouselItems) request.params.headers['X-Binarta-Carousel'] = true;
-            if (args.q) request.params.data.args.q = args.q;
-            if (args.mask) request.params.data.args.mask = args.mask;
-            if (args.sortings) request.params.data.args.sortings = args.sortings;
-            if (args.filters) {
-                Object.keys(args.filters).reduce(function (p, c) {
-                    p[c] = args.filters[c];
-                    return p;
-                }, request.params.data.args);
-                if (decorator)
-                    request.params.data.args = decorator(request.params.data.args)
-            }
+                request.success = function (results) {
+                    args.success(results.map(function (it) {
+                        var decorator = decorators[args.entity + '.' + args.action];
+                        return it = decorator ? decorator(it) : it;
+                    }));
+                };
 
-            rest(request);
+                if (!args.locale) args.locale = getCurrentLocale();
+
+                request.params = {
+                    method: 'POST',
+                    url: config.baseUri + 'api/query/' + args.entity + '/' + args.action,
+                    headers: {'accept-language': args.locale},
+                    data: {args: {namespace: config.namespace, subset: args.subset}, locale: args.locale},
+                    withCredentials: true
+                };
+                if (args.includeCarouselItems) request.params.headers['X-Binarta-Carousel'] = true;
+                if (args.q) request.params.data.args.q = args.q;
+                if (args.mask) request.params.data.args.mask = args.mask;
+                if (args.sortings) request.params.data.args.sortings = args.sortings;
+                if (args.filters) {
+                    Object.keys(args.filters).reduce(function (p, c) {
+                        p[c] = args.filters[c];
+                        return p;
+                    }, request.params.data.args);
+                    if (decorator)
+                        request.params.data.args = decorator(request.params.data.args)
+                }
+
+                rest(request);
+
+                function getCurrentLocale() {
+                    return binarta.application.localeForPresentation() || binarta.application.locale();
+                }
+            });
         }
     }
 
