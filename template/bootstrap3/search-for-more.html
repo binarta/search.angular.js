@@ -1,13 +1,13 @@
-<div class="bin-states" ng-show="searchCtrl.results.length == 0">
+<div class="bin-states" ng-show="!searchCtrl.results">
     <div class="bin-state-working" ng-show="searchCtrl.working">
         <i class="fa fa-spinner fa-spin fa-3x text-muted"></i>
     </div>
-    <div class="bin-state-empty" ng-hide="searchCtrl.working">
-        <div class="bin-status-visual">
-            <i class="fa" ng-class="searchCtrl.q ? 'fa-search' : 'fa-cloud'"></i>
-        </div>
-        <h3 class="bin-status-visual-title" i18n code="search.no.items.found.message" read-only ng-bind="::var"></h3>
+</div>
+<div class="bin-state-empty" ng-show="searchCtrl.results.length == 0 && searchCtrl.q">
+    <div class="bin-status-visual">
+        <i class="fa fa-search"></i>
     </div>
+    <h3 class="bin-status-visual-title" i18n code="search.no.items.found.message" read-only ng-bind="::var"></h3>
 </div>
 <div ng-show="searchCtrl.results.length > 0">
     <div class="row" ng-if="searchCtrl.hasMoreResults">
