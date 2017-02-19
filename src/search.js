@@ -94,7 +94,7 @@
             self.onRender = args.onRender;
             applyRouteTypeToFilters();
             $scope.$on('$destroy', function() {
-                if (self.onRender) $scope.$eval(self.onRender, {results:ctx.results});
+                if (args.onDestroy) $scope.$eval(args.onDestroy, {results:ctx.results});
             });
             new Initializer(args, ctx).execute();
 

@@ -566,30 +566,33 @@ describe('search.js', function () {
                         });
 
                         describe('when init with onRender expression', function() {
-                            var capturedResults, results;
+                            var capturedRender, capturedDestroy, results;
 
                             beforeEach(function() {
                                 results = [{id:1}, {id:2}];
-                                $scope.capture = function(results) {
-                                    capturedResults = results;
+                                $scope.captureRender = function(results) {
+                                    capturedRender = results;
                                 };
-                                ctx.init({onRender: 'capture(results)'});
+                                $scope.captureDestroy = function(results) {
+                                    capturedDestroy = results;
+                                };
+                                ctx.init({onRender: 'captureRender(results)', onDestroy:'captureDestroy(results)'});
                                 ctx.search();
                                 request().success(results);
                             });
 
                             it('on success results are passed to expression', function() {
-                                expect(capturedResults).toEqual(results);
+                                expect(capturedRender).toEqual(results);
                             });
 
                             describe('and on $destroy', function() {
                                 beforeEach(function() {
-                                    capturedResults = undefined;
+                                    capturedRender = undefined;
                                     $scope.$destroy();
                                 });
 
                                 it('then full result set is passed to expression', function() {
-                                    expect(capturedResults).toEqual(ctx.results);
+                                    expect(capturedDestroy).toEqual(ctx.results);
                                 });
                             });
 
