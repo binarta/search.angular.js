@@ -91,7 +91,11 @@
             self.noMoreResultsNotification = args.noMoreResultsNotification != false;
             ctx.decorator = args.decorator;
             ctx.filtersCustomizer = args.filtersCustomizer;
+            self.onRender = args.onRender;
             applyRouteTypeToFilters();
+            $scope.$on('$destroy', function() {
+                if (self.onRender) $scope.$eval(self.onRender, {results:ctx.results});
+            });
             new Initializer(args, ctx).execute();
 
             function applySearchSettings() {
@@ -136,6 +140,7 @@
                 if (ctx.decorator) ctx.decorator(it);
                 ctx.results.push(it);
             });
+            if (self.onRender) $scope.$eval(self.onRender, {results:results});
             if (ctx.results.length > 0 && results.length == 0) {
                 if (self.noMoreResultsNotification)
                     topicMessageDispatcher.fire('system.info', {

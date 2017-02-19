@@ -565,6 +565,36 @@ describe('search.js', function () {
                             expect(request().params.headers['X-Binarta-Carousel']).toBeTruthy();
                         });
 
+                        describe('when init with onRender expression', function() {
+                            var capturedResults, results;
+
+                            beforeEach(function() {
+                                results = [{id:1}, {id:2}];
+                                $scope.capture = function(results) {
+                                    capturedResults = results;
+                                };
+                                ctx.init({onRender: 'capture(results)'});
+                                ctx.search();
+                                request().success(results);
+                            });
+
+                            it('on success results are passed to expression', function() {
+                                expect(capturedResults).toEqual(results);
+                            });
+
+                            describe('and on $destroy', function() {
+                                beforeEach(function() {
+                                    capturedResults = undefined;
+                                    $scope.$destroy();
+                                });
+
+                                it('then full result set is passed to expression', function() {
+                                    expect(capturedResults).toEqual(ctx.results);
+                                });
+                            });
+
+                        });
+
                         describe('when init with search template defined', function () {
                             beforeEach(function () {
                                 config.searchSettings = {
