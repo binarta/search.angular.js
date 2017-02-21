@@ -48,6 +48,7 @@
                     if (decorator)
                         request.params.data.args = decorator(request.params.data.args)
                 }
+                // request.params.data.args.subset.count++;
 
                 rest(request);
 
@@ -114,19 +115,8 @@
             }
         }
 
-
-        function flagForMoreResultsAndDropExcessElements(results, ctx) {
-            if (results.length == self.subset.count + 1) {
-                ctx.hasMoreResults = true;
-                results.splice(-1, 1);
-            } else {
-                ctx.hasMoreResults = false;
-            }
-        }
-
         function exposeSearchResultsOnScope(results, ctx) {
             if (!ctx.results) ctx.results = [];
-            flagForMoreResultsAndDropExcessElements(results, ctx);
             if (results.length > 0) incrementOffset(results.length);
             results.forEach(function (it) {
                 it.remove = function () {
@@ -183,7 +173,7 @@
                 var args = Object.create(request);
                 args.entity = self.entity;
                 args.action = self.action;
-                args.subset = getIncrementedSubset();
+                args.subset = getSubset();
                 args.locale = self.locale;
                 args.mask = ctx.mask;
                 args.filters = ctx.filters;
@@ -193,7 +183,7 @@
             };
             if (ctx.filtersCustomizer) ctx.filtersCustomizer({
                 filters: ctx.filters,
-                subset: getIncrementedSubset()
+                subset: getSubset()
             }).then(applyFiltersAndSendRequest, applyFiltersAndSendRequest);
             else applyFiltersAndSendRequest();
         }
@@ -202,10 +192,10 @@
             $location.search('q', ctx.q);
         }
 
-        function getIncrementedSubset() {
+        function getSubset() {
             return {
                 offset: self.subset.offset,
-                count: self.subset.count + 1
+                count: self.subset.count
             }
         }
 
