@@ -36,22 +36,41 @@ describe('search.js', function () {
             expect(request().params.data.args.mask).toEqual('mask');
         });
 
-        // it('test', function() {
-        //     var data;
-        //     search({
-        //         entity: 'E',
-        //         action:'C',
-        //         subset: {offset: 0, count: 1},
-        //         success: function(d) {
-        //             data = d;
-        //         }
-        //     });
-        //     triggerBinartaSchedule();
-        //     expect(request().params.data.args.subset).toEqual({offset: 0, count: 2});
-        //     request().success([{id:1}, {id:2}]);
-        //     expect(d.hasMore).toBe(true);
-        //     expect(d.results).toEqual([{id:1}, {id:2}]);
-        // });
+        it('result set is limited to requested page size even if excess elements exist', function() {
+            var data;
+            search({
+                entity: 'E',
+                action:'C',
+                subset: {offset: 0, count: 1},
+                success: function(d) {
+                    data = d;
+                }
+            });
+            triggerBinartaSchedule();
+            expect(request().params.data.args.subset).toEqual({offset: 0, count: 2});
+            request().success([{id:1}, {id:2}]);
+            expect(data).toEqual([{id:1}]);
+            // expect(data.hasMore).toBe(true);
+            // expect(data.results).toEqual([{id:1}]);
+        });
+
+        it('test', function() {
+            var data;
+            search({
+                entity: 'E',
+                action:'C',
+                subset: {offset: 0, count: 1},
+                complexResult: true,
+                success: function(d) {
+                    data = d;
+                }
+            });
+            triggerBinartaSchedule();
+            expect(request().params.data.args.subset).toEqual({offset: 0, count: 2});
+            request().success([{id:1}, {id:2}]);
+            expect(data.hasMore).toBe(true);
+            expect(data.results).toEqual([{id:1}]);
+        });
 
         it('and search do rest call', function () {
             search({
@@ -67,7 +86,7 @@ describe('search.js', function () {
             expect(request().params.data.args).toEqual({
                 namespace: 'N',
                 customField: 'F',
-                subset: {offset: 0, count: 10}
+                subset: {offset: 0, count: 11}
             });
             expect(request().params.data.locale).toEqual('en');
             expect(request().params.headers['accept-language']).toEqual('en');
@@ -268,7 +287,7 @@ describe('search.js', function () {
                                         namespace: 'N',
                                         customField: 'F',
                                         type: undefined,
-                                        subset: {offset: 0, count: 10}
+                                        subset: {offset: 0, count: 11}
                                     });
                                     expect(request().params.headers['accept-language']).toEqual('en');
                                     expect(request().params.withCredentials).toBeTruthy();
@@ -318,7 +337,7 @@ describe('search.js', function () {
                                     it('with customizer success', function () {
                                         ctx.search();
                                         expect(request().params.data.args.customized).toBeTruthy();
-                                        expect(request().params.data.args.count).toEqual(request().params.data.args.subset.count);
+                                        expect(request().params.data.args.count+1).toEqual(request().params.data.args.subset.count);
                                         expect(request().params.data.args.offset).toEqual(request().params.data.args.subset.offset);
                                     });
 
@@ -413,12 +432,12 @@ describe('search.js', function () {
                                         });
 
                                         it('increment offset with count', function () {
-                                            expect(request().params.data.args.subset).toEqual({offset: 10, count: 10});
+                                            expect(request().params.data.args.subset).toEqual({offset: 10, count: 11});
                                         });
 
                                         it('new searches reset the offset', function () {
                                             ctx.search();
-                                            expect(request(1).params.data.args.subset).toEqual({offset: 0, count: 10});
+                                            expect(request(1).params.data.args.subset).toEqual({offset: 0, count: 11});
                                         });
 
                                         describe('and more results found', function () {
@@ -441,7 +460,7 @@ describe('search.js', function () {
                                                 });
 
                                                 it('increment offset with count', function () {
-                                                    expect(request().params.data.args.subset).toEqual({offset: 11, count: 10});
+                                                    expect(request().params.data.args.subset).toEqual({offset: 11, count: 11});
                                                 });
                                             });
                                         });
@@ -454,7 +473,7 @@ describe('search.js', function () {
 
                                             it('increment offset with count', function () {
                                                 ctx.searchForMore();
-                                                expect(request().params.data.args.subset).toEqual({offset: 10, count: 10});
+                                                expect(request().params.data.args.subset).toEqual({offset: 10, count: 11});
                                             });
 
                                             it('only search for more when not working', function () {
@@ -527,7 +546,7 @@ describe('search.js', function () {
                         it('a custom page size can be specified on init', function () {
                             ctx.init({subset: {count: 5}});
                             ctx.search();
-                            expect(request().params.data.args).toEqual({namespace: 'N', type: undefined, subset: {offset: 0, count: 5}});
+                            expect(request().params.data.args).toEqual({namespace: 'N', type: undefined, subset: {offset: 0, count: 6}});
                         });
 
                         it('a custom sorting can be specified on init', function () {
@@ -633,7 +652,7 @@ describe('search.js', function () {
 
                                 expect(request().params.url).toEqual('http://host/api/query/entity/action');
                                 expect(request().params.data.args.customField).toEqual('custom');
-                                expect(request().params.data.args.subset.count).toEqual(1);
+                                expect(request().params.data.args.subset.count).toEqual(2);
                             });
 
                             it('template settings can be overridden', function () {

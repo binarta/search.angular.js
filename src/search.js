@@ -20,12 +20,29 @@
                 var decorator = decorators[args.entity + '.' + args.action + '.request'];
                 var request = Object.create(args);
 
+                function dropExcessResults(result) {
+                    if (args.subset && args.subset.count && args.subset.count + 1 == result.results.length) {
+                        result.results.splice(-1);
+                        result.hasMore = true;
+                    }
+                }
+
                 request.success = function (results) {
-                    args.success(results.map(function (it) {
-                        var decorator = decorators[args.entity + '.' + args.action];
-                        return it = decorator ? decorator(it) : it;
-                    }));
+                    var result = {
+                        hasMore:false,
+                        results: decoratedResults(results)
+                    };
+                    dropExcessResults(result);
+                    args.complexResult ? args.success(result) : args.success(result.results);
                 };
+
+                function decoratedResults(results) {
+                    return results.map(function (it) {
+                        var decorator = decorators[args.entity + '.' + args.action];
+                        return decorator ? decorator(it) : it;
+                    })
+                }
+
 
                 if (!args.locale) args.locale = getCurrentLocale();
 
@@ -48,7 +65,10 @@
                     if (decorator)
                         request.params.data.args = decorator(request.params.data.args)
                 }
-                // request.params.data.args.subset.count++;
+                if (args.subset && args.subset) request.params.data.args.subset = {
+                    count: args.subset.count + 1,
+                    offset: args.subset.offset
+                };
 
                 rest(request);
 
