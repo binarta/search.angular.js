@@ -135,9 +135,11 @@
             }
         }
 
-        function exposeSearchResultsOnScope(results, ctx) {
+        function exposeSearchResultsOnScope(result, ctx) {
+            var results = result.results;
             if (!ctx.results) ctx.results = [];
             if (results.length > 0) incrementOffset(results.length);
+            ctx.hasMoreResults = result.hasMore;
             results.forEach(function (it) {
                 it.remove = function () {
                     ctx.results.splice(ctx.results.indexOf(it), 1);
@@ -199,6 +201,7 @@
                 args.filters = ctx.filters;
                 args.sortings = ctx.sortings;
                 args.q = ctx.q;
+                args.complexResult = true;
                 search(args);
             };
             if (ctx.filtersCustomizer) ctx.filtersCustomizer({

@@ -50,11 +50,9 @@ describe('search.js', function () {
             expect(request().params.data.args.subset).toEqual({offset: 0, count: 2});
             request().success([{id:1}, {id:2}]);
             expect(data).toEqual([{id:1}]);
-            // expect(data.hasMore).toBe(true);
-            // expect(data.results).toEqual([{id:1}]);
         });
 
-        it('test', function() {
+        it('result set can indicate there are more results available', function() {
             var data;
             search({
                 entity: 'E',
@@ -383,14 +381,21 @@ describe('search.js', function () {
                                             {name: 'item-7'},
                                             {name: 'item-8'},
                                             {name: 'item-9'},
-                                            {name: 'item-10'}
+                                            {name: 'item-10'},
+                                            {name: 'item-11'}
                                         ];
 
-                                        request().success(results);
+                                        request().success(results.slice(0));
                                     });
 
                                     it('exposed on scope', function () {
-                                        expect(ctx.results).toEqual(results);
+                                        var r = results.slice(0);
+                                        r.splice(-1);
+                                        expect(ctx.results).toEqual(r);
+                                    });
+
+                                    it('test', function() {
+                                        expect(ctx.hasMoreResults).toBe(true);
                                     });
 
                                     it('subsequent searches reset results', function () {
@@ -400,7 +405,7 @@ describe('search.js', function () {
 
                                     it('search results can be removed from the view', function () {
                                         results[0].remove();
-                                        expect(ctx.results).toEqual(results.splice(1, results.length));
+                                        expect(ctx.results).toEqual(results.slice(0).splice(1, results.slice(0).length-2));
                                     });
 
                                     it('search results can be updated', inject(function () {
