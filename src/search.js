@@ -5,13 +5,22 @@
         .factory('binartaEntityReader', ['usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'restServiceHandler', BinartaEntityReaderFactory])
         .factory('binartaEntityEcho', ['usecaseAdapterFactory', 'config', 'restServiceHandler', BinartaEntityEchoFactory])
         .factory('binartaSearch', ['restServiceHandler', 'binartaEntityDecorators', 'config', 'binarta', BinartaSearchFactory])
-        .controller('BinartaSearchController', ['$scope', 'config', 'usecaseAdapterFactory', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaSearch', '$routeParams', BinartaSearchController])
+        .controller('BinartaSearchController', ['$scope', 'config', 'usecaseAdapterFactory', 'ngRegisterTopicHandler', '$location', 'topicMessageDispatcher', 'binartaSearch', '$routeParams', '$log', BinartaSearchController])
         .controller('BinartaEntityController', ['$scope', '$location', '$routeParams', 'restServiceHandler', 'usecaseAdapterFactory', 'config', 'binartaEntityDecorators', 'binartaEntityReader', 'topicMessageDispatcher', BinartaEntityController])
         .controller('RedirectToSearchController', ['$scope', '$location', '$routeParams', RedirectToSearchController])
+        .component('binSearchWidget', new BinSearchWidget())
         .config(['$routeProvider', function ($routeProvider) {
             $routeProvider
-                .when('/search/:type', {templateUrl: 'partials/search/index.html', controller: 'BinartaSearchController as searchCtrl', reloadOnSearch: false})
-                .when('/:locale/search/:type', {templateUrl: 'partials/search/index.html', controller: 'BinartaSearchController as searchCtrl', reloadOnSearch: false});
+                .when('/search/:type', {
+                    templateUrl: 'bin-search-page.html',
+                    controller: 'BinartaSearchController as searchCtrl',
+                    reloadOnSearch: false
+                })
+                .when('/:locale/search/:type', {
+                    templateUrl: 'bin-search-page.html',
+                    controller: 'BinartaSearchController as searchCtrl',
+                    reloadOnSearch: false
+                });
         }]);
 
     function BinartaSearchFactory(rest, decorators, config, binarta) {
@@ -29,7 +38,7 @@
 
                 request.success = function (results) {
                     var result = {
-                        hasMore:false,
+                        hasMore: false,
                         results: decoratedResults(results)
                     };
                     dropExcessResults(result);
@@ -79,9 +88,19 @@
         }
     }
 
-    function BinartaSearchController($scope, config, usecaseAdapterFactory, ngRegisterTopicHandler, $location, topicMessageDispatcher, search, $routeParams) {
-        var self = this;
+    function BinartaSearchController($scope, config, usecaseAdapterFactory, ngRegisterTopicHandler, $location, topicMessageDispatcher, search, $routeParams, $log) {
+        var $ctrl = this;
         var request;
+
+        $ctrl.templateUrl = 'bin-search-page-default.html';
+        if (!config.BinSearchCatalogPage || !config.BinSearchCatalogPage.useLibraryTemplate) {
+            $ctrl.templateUrl = 'partials/search/index.html';
+            $log.warn('@Deprecated - BinSearchCatalogPage.templateUrl = \"' + $ctrl.templateUrl + '\"! Set config.BinSearchCatalogPage.useDefaultTemplate = true to remedy!');
+        }
+        if (config.BinSearchCatalogPage) {
+            if (config.BinSearchCatalogPage.templateUrl)
+                $ctrl.templateUrl = config.BinSearchCatalogPage.templateUrl;
+        }
 
         $scope.$on('$routeUpdate', function () {
             exposeViewMode($location.search().viewMode);
@@ -89,7 +108,7 @@
 
         function exposeViewMode(mode) {
             $scope.viewMode = mode;
-            self.viewMode = mode;
+            $ctrl.viewMode = mode;
             if (mode) $location.search().viewMode = mode;
         }
 
@@ -100,22 +119,22 @@
             init(args, $scope);
         };
         this.init = function (args) {
-            init(args, self);
+            init(args, $ctrl);
         };
 
         function init(args, ctx) {
             applySearchSettings();
             request = usecaseAdapterFactory(ctx);
             request.includeCarouselItems = args.includeCarouselItems;
-            self.entity = args.entity;
-            self.action = args.context;
-            self.noMoreResultsNotification = args.noMoreResultsNotification != false;
+            $ctrl.entity = args.entity;
+            $ctrl.action = args.context;
+            $ctrl.noMoreResultsNotification = args.noMoreResultsNotification != false;
             ctx.decorator = args.decorator;
             ctx.filtersCustomizer = args.filtersCustomizer;
-            self.onRender = args.onRender;
+            $ctrl.onRender = args.onRender;
             applyRouteTypeToFilters();
-            $scope.$on('$destroy', function() {
-                if (args.onDestroy) $scope.$eval(args.onDestroy, {results:ctx.results});
+            $scope.$on('$destroy', function () {
+                if (args.onDestroy) $scope.$eval(args.onDestroy, {results: ctx.results});
             });
             new Initializer(args, ctx).execute();
 
@@ -152,9 +171,9 @@
                 if (ctx.decorator) ctx.decorator(it);
                 ctx.results.push(it);
             });
-            if (self.onRender) $scope.$eval(self.onRender, {results:results});
+            if ($ctrl.onRender) $scope.$eval($ctrl.onRender, {results: results});
             if (ctx.results.length > 0 && results.length == 0) {
-                if (self.noMoreResultsNotification)
+                if ($ctrl.noMoreResultsNotification)
                     topicMessageDispatcher.fire('system.info', {
                         code: 'no.more.results.found',
                         default: 'No more results found.'
@@ -167,13 +186,13 @@
         }
 
         function incrementOffset(count) {
-            self.subset.offset += count;
+            $ctrl.subset.offset += count;
         }
 
         var defaultSubset = {offset: 0, count: 10};
 
         function reset(ctx) {
-            self.subset = {offset: defaultSubset.offset, count: defaultSubset.count};
+            $ctrl.subset = {offset: defaultSubset.offset, count: defaultSubset.count};
             ctx.results = undefined;
         }
 
@@ -184,19 +203,19 @@
         };
 
         this.search = function () {
-            self.searchForMoreLock = true;
-            reset(self);
-            executeSearch(self);
+            $ctrl.searchForMoreLock = true;
+            reset($ctrl);
+            executeSearch($ctrl);
         };
 
         function executeSearch(ctx) {
             var applyFiltersAndSendRequest = function () {
                 applySearchQueryFilter(ctx);
                 var args = Object.create(request);
-                args.entity = self.entity;
-                args.action = self.action;
+                args.entity = $ctrl.entity;
+                args.action = $ctrl.action;
                 args.subset = getSubset();
-                args.locale = self.locale;
+                args.locale = $ctrl.locale;
                 args.mask = ctx.mask;
                 args.filters = ctx.filters;
                 args.sortings = ctx.sortings;
@@ -217,8 +236,8 @@
 
         function getSubset() {
             return {
-                offset: self.subset.offset,
-                count: self.subset.count
+                offset: $ctrl.subset.offset,
+                count: $ctrl.subset.count
             }
         }
 
@@ -227,7 +246,7 @@
         };
 
         this.searchForMore = function () {
-            if (!self.working && !self.searchForMoreLock) executeSearch(self);
+            if (!$ctrl.working && !$ctrl.searchForMoreLock) executeSearch($ctrl);
         };
 
         function Initializer(args, ctx) {
@@ -269,7 +288,7 @@
                     scope: $scope,
                     topic: 'i18n.locale',
                     handler: function (locale) {
-                        self.locale = locale;
+                        $ctrl.locale = locale;
                         if (args.autosearch) callback();
                     },
                     executeHandlerOnce: true
@@ -277,7 +296,7 @@
             }
 
             function withDefaultLocale(callback) {
-                self.locale = 'default';
+                $ctrl.locale = 'default';
                 if (args.autosearch) callback();
             }
         }
@@ -298,6 +317,13 @@
         function localizedPrefix() {
             return $routeParams.locale ? '/' + $routeParams.locale : ''
         }
+    }
+
+    function BinSearchWidget() {
+        this.templateUrl = 'bin-search-widget.html';
+        this.bindings = {
+            searchMode: '@'
+        };
     }
 
     function BinartaEntityReaderFactory(usecaseAdapterFactory, config, binartaEntityDecorators, restServiceHandler) {
@@ -391,8 +417,8 @@
                 $scope.init(args)
             };
             var queryParams = {};
-            queryParams[args.redirectIdToField||'id'] = self.ctx.id || $location.search()[args.queryParam] || $routeParams.id;
-            if(args.namedQuery) queryParams.context = args.namedQuery;
+            queryParams[args.redirectIdToField || 'id'] = self.ctx.id || $location.search()[args.queryParam] || $routeParams.id;
+            if (args.namedQuery) queryParams.context = args.namedQuery;
             fetch(queryParams);
             if (self.ctx.queryParam) $scope.$on('$routeUpdate', function (evt, args) {
                 if (args.params[self.ctx.queryParam]) fetch({id: args.params[self.ctx.queryParam]});
@@ -424,9 +450,9 @@
 
         $scope.create = function () {
             performHTTPRequest({
-                action:'add',
-                method:'PUT',
-                onSuccess:$scope.edit
+                action: 'add',
+                method: 'PUT',
+                onSuccess: $scope.edit
             });
         };
 
@@ -436,13 +462,13 @@
 
         $scope.update = function () {
             performHTTPRequest({
-                action:'update',
-                method:'POST',
-                onSuccess:$scope.clear
+                action: 'update',
+                method: 'POST',
+                onSuccess: $scope.clear
             });
         };
 
-        $scope.remove = function() {
+        $scope.remove = function () {
             var request = usecaseAdapterFactory($scope);
             request.params = {
                 method: 'DELETE',

@@ -36,38 +36,38 @@ describe('search.js', function () {
             expect(request().params.data.args.mask).toEqual('mask');
         });
 
-        it('result set is limited to requested page size even if excess elements exist', function() {
+        it('result set is limited to requested page size even if excess elements exist', function () {
             var data;
             search({
                 entity: 'E',
-                action:'C',
+                action: 'C',
                 subset: {offset: 0, count: 1},
-                success: function(d) {
+                success: function (d) {
                     data = d;
                 }
             });
             triggerBinartaSchedule();
             expect(request().params.data.args.subset).toEqual({offset: 0, count: 2});
-            request().success([{id:1}, {id:2}]);
-            expect(data).toEqual([{id:1}]);
+            request().success([{id: 1}, {id: 2}]);
+            expect(data).toEqual([{id: 1}]);
         });
 
-        it('result set can indicate there are more results available', function() {
+        it('result set can indicate there are more results available', function () {
             var data;
             search({
                 entity: 'E',
-                action:'C',
+                action: 'C',
                 subset: {offset: 0, count: 1},
                 complexResult: true,
-                success: function(d) {
+                success: function (d) {
                     data = d;
                 }
             });
             triggerBinartaSchedule();
             expect(request().params.data.args.subset).toEqual({offset: 0, count: 2});
-            request().success([{id:1}, {id:2}]);
+            request().success([{id: 1}, {id: 2}]);
             expect(data.hasMore).toBe(true);
-            expect(data.results).toEqual([{id:1}]);
+            expect(data.results).toEqual([{id: 1}]);
         });
 
         it('and search do rest call', function () {
@@ -182,528 +182,535 @@ describe('search.js', function () {
             'scope',
             'controller'
         ].forEach(function (context) {
-                describe('with ' + context, function () {
-                    var ctx;
-                    beforeEach(function () {
-                        if (context == 'scope') ctx = $scope;
-                        if (context == 'controller') ctx = ctrl;
+            describe('with ' + context, function () {
+                var ctx;
+                beforeEach(function () {
+                    if (context == 'scope') ctx = $scope;
+                    if (context == 'controller') ctx = ctrl;
+                });
+
+                describe('on init', function () {
+                    it('apply projection mask to query', function () {
+                        ctx.init({mask: 'mask'});
+                        ctx.search();
+                        expect(request().params.data.args.mask).toEqual('mask');
                     });
 
-                    describe('on init', function () {
-                        it('apply projection mask to query', function () {
-                            ctx.init({mask: 'mask'});
-                            ctx.search();
-                            expect(request().params.data.args.mask).toEqual('mask');
+                    describe('without autosearch', function () {
+                        beforeEach(function () {
+                            ctx.init({
+                                entity: 'E',
+                                context: 'C',
+                                filters: {customField: 'F'}
+                            });
                         });
 
-                        describe('without autosearch', function () {
+                        it('and query parameter is provided', inject(function ($location) {
+                            $location.search('q', 'text');
+                            ctx.init({});
+                            expect(ctx.q).toEqual('text');
+                        }));
+
+                        describe('and locale selected', function () {
                             beforeEach(function () {
-                                ctx.init({
-                                    entity: 'E',
-                                    context: 'C',
-                                    filters: {customField: 'F'}
-                                });
+                                topics['i18n.locale']('en');
                             });
 
-                            it('and query parameter is provided', inject(function ($location) {
-                                $location.search('q', 'text');
-                                ctx.init({});
-                                expect(ctx.q).toEqual('text');
+                            it('no events are registered with app.start', inject(function () {
+                                expect(topics['app.start']).toBeUndefined();
                             }));
-
-                            describe('and locale selected', function () {
-                                beforeEach(function () {
-                                    topics['i18n.locale']('en');
-                                });
-
-                                it('no events are registered with app.start', inject(function () {
-                                    expect(topics['app.start']).toBeUndefined();
-                                }));
-                            });
-
-                            describe('when calling search for more before search', function () {
-                                it('then no request is sent', function () {
-                                    ctx.searchForMore();
-                                    expect(rest.calls.first()).toBeUndefined();
-                                });
-
-                                describe('and search and search more are called', function () {
-                                    beforeEach(function () {
-                                        ctx.search();
-                                        request().success(['R']);
-                                        rest.calls.reset();
-                                        ctx.searchForMore();
-                                    });
-
-                                    it('then search for more was called', function () {
-                                        expect(request()).toBeDefined();
-                                    });
-
-                                    describe('and search is called again', function () {
-                                        beforeEach(function () {
-                                            request().success([]);
-                                            ctx.search();
-                                        });
-
-                                        describe('and before response we call search more', function () {
-                                            beforeEach(function () {
-                                                rest.calls.reset();
-                                                ctx.searchForMore();
-                                            });
-
-                                            it('then search for more is not executed', function () {
-                                                expect(rest.calls.first()).toBeUndefined();
-                                            })
-                                        });
-                                    })
-                                });
-                            })
                         });
 
-                        describe('with autosearch', function () {
-                            beforeEach(function () {
-                                ctx.init({
-                                    entity: 'E',
-                                    context: 'C',
-                                    filters: {customField: 'F'},
-                                    autosearch: true,
-                                    decorator: function (it) {
-                                        it.decorated = true;
-                                    }
-                                });
+                        describe('when calling search for more before search', function () {
+                            it('then no request is sent', function () {
+                                ctx.searchForMore();
+                                expect(rest.calls.first()).toBeUndefined();
                             });
 
-                            describe('and locale selected', function () {
+                            describe('and search and search more are called', function () {
                                 beforeEach(function () {
-                                    topics['i18n.locale']('en');
-                                });
-
-                                it('and search do rest call', function () {
-                                    expect(request().params.method).toEqual('POST');
-                                    expect(request().params.url).toEqual('http://host/api/query/E/C');
-                                    expect(request().params.data.args).toEqual({
-                                        namespace: 'N',
-                                        customField: 'F',
-                                        type: undefined,
-                                        subset: {offset: 0, count: 11}
-                                    });
-                                    expect(request().params.headers['accept-language']).toEqual('en');
-                                    expect(request().params.withCredentials).toBeTruthy();
-                                });
-
-                                it('locale param should be on data', function () {
-                                    expect(request().params.data.locale).toEqual('en');
-                                });
-
-                                it('and search with query string', inject(function ($location) {
-                                    ctx.q = 'query-string';
                                     ctx.search();
-                                    expect(request(1).params.data.args.q).toEqual(ctx.q);
-                                    expect($location.search()).toEqual({q: 'query-string'});
-                                }));
-
-                                it('and search with custom filters defined through ctx', function () {
-                                    ctx.filters.anotherFilter = 'X';
-                                    ctx.search();
-                                    expect(request(1).params.data.args.anotherFilter).toEqual('X');
+                                    request().success(['R']);
+                                    rest.calls.reset();
+                                    ctx.searchForMore();
                                 });
 
-                                describe('with filters customizer', function () {
-                                    var success;
-
-                                    beforeEach(function () {
-                                        topics = {};
-                                        success = true;
-                                        rest.calls.reset();
-                                        ctx.init({
-                                            entity: 'E',
-                                            context: 'C',
-                                            filters: {customField: 'F'},
-                                            filtersCustomizer: function (args) {
-                                                args.filters.customized = true;
-                                                args.filters.offset = args.subset.offset;
-                                                args.filters.count = args.subset.count;
-                                                return {
-                                                    then: function (s, e) {
-                                                        success ? s() : e();
-                                                    }
-                                                }
-                                            }
-                                        });
-                                    });
-
-                                    it('with customizer success', function () {
-                                        ctx.search();
-                                        expect(request().params.data.args.customized).toBeTruthy();
-                                        expect(request().params.data.args.count+1).toEqual(request().params.data.args.subset.count);
-                                        expect(request().params.data.args.offset).toEqual(request().params.data.args.subset.offset);
-                                    });
-
-                                    it('with customizer failure', function () {
-                                        success = false;
-                                        ctx.search();
-                                        expect(request().params.data.args.customized).toBeTruthy();
-                                    })
+                                it('then search for more was called', function () {
+                                    expect(request()).toBeDefined();
                                 });
 
-                                describe('and when only use the default locale', function () {
+                                describe('and search is called again', function () {
                                     beforeEach(function () {
-                                        ctx.init({
-                                            entity: 'E',
-                                            context: 'C',
-                                            autosearch: true,
-                                            filters: {
-                                                locale: 'default'
-                                            }
-                                        });
-                                    });
-
-                                    it('accept default locale', function () {
-                                        expect(request(1).params.headers['accept-language']).toEqual('default');
-                                    });
-
-                                    it('default locale param is on data', function () {
-                                        expect(request(1).params.data.locale).toEqual('default');
-                                    });
-                                });
-
-                                describe('and with search results', function () {
-                                    var results;
-
-                                    beforeEach(function () {
-                                        results = [
-                                            {name: 'item-1'},
-                                            {name: 'item-2'},
-                                            {name: 'item-3'},
-                                            {name: 'item-4'},
-                                            {name: 'item-5'},
-                                            {name: 'item-6'},
-                                            {name: 'item-7'},
-                                            {name: 'item-8'},
-                                            {name: 'item-9'},
-                                            {name: 'item-10'},
-                                            {name: 'item-11'}
-                                        ];
-
-                                        request().success(results.slice(0));
-                                    });
-
-                                    it('exposed on scope', function () {
-                                        var r = results.slice(0);
-                                        r.splice(-1);
-                                        expect(ctx.results).toEqual(r);
-                                    });
-
-                                    it('test', function() {
-                                        expect(ctx.hasMoreResults).toBe(true);
-                                    });
-
-                                    it('subsequent searches reset results', function () {
+                                        request().success([]);
                                         ctx.search();
-                                        expect(ctx.results).toBeUndefined();
                                     });
 
-                                    it('search results can be removed from the view', function () {
-                                        results[0].remove();
-                                        expect(ctx.results).toEqual(results.slice(0).splice(1, results.slice(0).length-2));
-                                    });
-
-                                    it('search results can be updated', inject(function () {
-                                        results[0].update({name: 'item-1-alt'});
-                                        expect(results[0].name).toEqual('item-1-alt');
-                                    }));
-
-                                    it('results can be decorated with decorator on parent scope', function () {
-                                        expect(results[0].decorated).toBeTruthy();
-                                    });
-
-                                    it('results can be decorated with decorator provider', function () {
-                                        ctx.init({entity: 'decorated-entity', context: 'view'});
-                                        ctx.search();
-                                        request(1).success([
-                                            {msg: 'result'}
-                                        ]);
-                                        expect(ctx.results[0].msg).toEqual('result');
-                                        expect(ctx.results[0].decoratedMsg).toEqual('decorated result');
-                                    });
-
-                                    describe('when searching for more', function () {
+                                    describe('and before response we call search more', function () {
                                         beforeEach(function () {
-                                            results = [
-                                                {name:'item-11'}
-                                            ];
                                             rest.calls.reset();
                                             ctx.searchForMore();
                                         });
 
-                                        it('increment offset with count', function () {
-                                            expect(request().params.data.args.subset).toEqual({offset: 10, count: 11});
+                                        it('then search for more is not executed', function () {
+                                            expect(rest.calls.first()).toBeUndefined();
+                                        })
+                                    });
+                                })
+                            });
+                        })
+                    });
+
+                    describe('with autosearch', function () {
+                        beforeEach(function () {
+                            ctx.init({
+                                entity: 'E',
+                                context: 'C',
+                                filters: {customField: 'F'},
+                                autosearch: true,
+                                decorator: function (it) {
+                                    it.decorated = true;
+                                }
+                            });
+                        });
+
+                        describe('and locale selected', function () {
+                            beforeEach(function () {
+                                topics['i18n.locale']('en');
+                            });
+
+                            it('and search do rest call', function () {
+                                expect(request().params.method).toEqual('POST');
+                                expect(request().params.url).toEqual('http://host/api/query/E/C');
+                                expect(request().params.data.args).toEqual({
+                                    namespace: 'N',
+                                    customField: 'F',
+                                    type: undefined,
+                                    subset: {offset: 0, count: 11}
+                                });
+                                expect(request().params.headers['accept-language']).toEqual('en');
+                                expect(request().params.withCredentials).toBeTruthy();
+                            });
+
+                            it('locale param should be on data', function () {
+                                expect(request().params.data.locale).toEqual('en');
+                            });
+
+                            it('and search with query string', inject(function ($location) {
+                                ctx.q = 'query-string';
+                                ctx.search();
+                                expect(request(1).params.data.args.q).toEqual(ctx.q);
+                                expect($location.search()).toEqual({q: 'query-string'});
+                            }));
+
+                            it('and search with custom filters defined through ctx', function () {
+                                ctx.filters.anotherFilter = 'X';
+                                ctx.search();
+                                expect(request(1).params.data.args.anotherFilter).toEqual('X');
+                            });
+
+                            describe('with filters customizer', function () {
+                                var success;
+
+                                beforeEach(function () {
+                                    topics = {};
+                                    success = true;
+                                    rest.calls.reset();
+                                    ctx.init({
+                                        entity: 'E',
+                                        context: 'C',
+                                        filters: {customField: 'F'},
+                                        filtersCustomizer: function (args) {
+                                            args.filters.customized = true;
+                                            args.filters.offset = args.subset.offset;
+                                            args.filters.count = args.subset.count;
+                                            return {
+                                                then: function (s, e) {
+                                                    success ? s() : e();
+                                                }
+                                            }
+                                        }
+                                    });
+                                });
+
+                                it('with customizer success', function () {
+                                    ctx.search();
+                                    expect(request().params.data.args.customized).toBeTruthy();
+                                    expect(request().params.data.args.count + 1).toEqual(request().params.data.args.subset.count);
+                                    expect(request().params.data.args.offset).toEqual(request().params.data.args.subset.offset);
+                                });
+
+                                it('with customizer failure', function () {
+                                    success = false;
+                                    ctx.search();
+                                    expect(request().params.data.args.customized).toBeTruthy();
+                                })
+                            });
+
+                            describe('and when only use the default locale', function () {
+                                beforeEach(function () {
+                                    ctx.init({
+                                        entity: 'E',
+                                        context: 'C',
+                                        autosearch: true,
+                                        filters: {
+                                            locale: 'default'
+                                        }
+                                    });
+                                });
+
+                                it('accept default locale', function () {
+                                    expect(request(1).params.headers['accept-language']).toEqual('default');
+                                });
+
+                                it('default locale param is on data', function () {
+                                    expect(request(1).params.data.locale).toEqual('default');
+                                });
+                            });
+
+                            describe('and with search results', function () {
+                                var results;
+
+                                beforeEach(function () {
+                                    results = [
+                                        {name: 'item-1'},
+                                        {name: 'item-2'},
+                                        {name: 'item-3'},
+                                        {name: 'item-4'},
+                                        {name: 'item-5'},
+                                        {name: 'item-6'},
+                                        {name: 'item-7'},
+                                        {name: 'item-8'},
+                                        {name: 'item-9'},
+                                        {name: 'item-10'},
+                                        {name: 'item-11'}
+                                    ];
+
+                                    request().success(results.slice(0));
+                                });
+
+                                it('exposed on scope', function () {
+                                    var r = results.slice(0);
+                                    r.splice(-1);
+                                    expect(ctx.results).toEqual(r);
+                                });
+
+                                it('test', function () {
+                                    expect(ctx.hasMoreResults).toBe(true);
+                                });
+
+                                it('subsequent searches reset results', function () {
+                                    ctx.search();
+                                    expect(ctx.results).toBeUndefined();
+                                });
+
+                                it('search results can be removed from the view', function () {
+                                    results[0].remove();
+                                    expect(ctx.results).toEqual(results.slice(0).splice(1, results.slice(0).length - 2));
+                                });
+
+                                it('search results can be updated', inject(function () {
+                                    results[0].update({name: 'item-1-alt'});
+                                    expect(results[0].name).toEqual('item-1-alt');
+                                }));
+
+                                it('results can be decorated with decorator on parent scope', function () {
+                                    expect(results[0].decorated).toBeTruthy();
+                                });
+
+                                it('results can be decorated with decorator provider', function () {
+                                    ctx.init({entity: 'decorated-entity', context: 'view'});
+                                    ctx.search();
+                                    request(1).success([
+                                        {msg: 'result'}
+                                    ]);
+                                    expect(ctx.results[0].msg).toEqual('result');
+                                    expect(ctx.results[0].decoratedMsg).toEqual('decorated result');
+                                });
+
+                                describe('when searching for more', function () {
+                                    beforeEach(function () {
+                                        results = [
+                                            {name: 'item-11'}
+                                        ];
+                                        rest.calls.reset();
+                                        ctx.searchForMore();
+                                    });
+
+                                    it('increment offset with count', function () {
+                                        expect(request().params.data.args.subset).toEqual({offset: 10, count: 11});
+                                    });
+
+                                    it('new searches reset the offset', function () {
+                                        ctx.search();
+                                        expect(request(1).params.data.args.subset).toEqual({offset: 0, count: 11});
+                                    });
+
+                                    describe('and more results found', function () {
+                                        beforeEach(function () {
+                                            request().success(results);
                                         });
 
-                                        it('new searches reset the offset', function () {
-                                            ctx.search();
-                                            expect(request(1).params.data.args.subset).toEqual({offset: 0, count: 11});
+                                        it('append to search results', function () {
+                                            expect(ctx.results.length).toEqual(11);
                                         });
 
-                                        describe('and more results found', function () {
-                                            beforeEach(function () {
-                                                request().success(results);
-                                            });
-
-                                            it('append to search results', function () {
-                                                expect(ctx.results.length).toEqual(11);
-                                            });
-
-                                            it('then context is flagged as having no more results', function() {
-                                                expect(ctx.hasMoreResults).toBeFalsy();
-                                            });
-
-                                            describe('and searching for more', function () {
-                                                beforeEach(function () {
-                                                    rest.calls.reset();
-                                                    ctx.searchForMore();
-                                                });
-
-                                                it('increment offset with count', function () {
-                                                    expect(request().params.data.args.subset).toEqual({offset: 11, count: 11});
-                                                });
-                                            });
+                                        it('then context is flagged as having no more results', function () {
+                                            expect(ctx.hasMoreResults).toBeFalsy();
                                         });
 
                                         describe('and searching for more', function () {
                                             beforeEach(function () {
-                                                request().success([]);
                                                 rest.calls.reset();
+                                                ctx.searchForMore();
                                             });
 
                                             it('increment offset with count', function () {
-                                                ctx.searchForMore();
-                                                expect(request().params.data.args.subset).toEqual({offset: 10, count: 11});
-                                            });
-
-                                            it('only search for more when not working', function () {
-                                                ctx.working = true;
-                                                ctx.searchForMore();
-                                                expect(rest.calls.first()).toBeUndefined();
-                                            });
-                                        });
-
-                                        describe('when no more are found', function () {
-                                            beforeEach(function () {
-                                                request().success([]);
-                                            });
-
-                                            it('send notification', function () {
-                                                expect(dispatcher['system.info']).toEqual({
-                                                    code: 'no.more.results.found',
-                                                    default: 'No more results found.'
+                                                expect(request().params.data.args.subset).toEqual({
+                                                    offset: 11,
+                                                    count: 11
                                                 });
                                             });
                                         });
+                                    });
 
-                                        describe('when no more results notification is disabled', function () {
-                                            beforeEach(function () {
-                                                ctx.init({noMoreResultsNotification: false});
-                                                rest.calls.reset();
-                                                ctx.searchForMore();
-                                                request().success([]);
-                                            });
-
-                                            it('no notification is sent', function () {
-                                                expect(dispatcher['system.info']).toBeUndefined();
-                                            });
-
-                                            it('expose no more results flag on scope', function () {
-                                                expect(ctx.noMoreResults).toBeTruthy();
-                                            });
-
-                                            describe('and when there are again more results', function () {
-                                                beforeEach(function () {
-                                                    request().success(results);
-                                                });
-
-                                                it('reset no more results flag on scope', function () {
-                                                    expect(ctx.noMoreResults).toBeFalsy();
-                                                });
-                                            });
+                                    describe('and searching for more', function () {
+                                        beforeEach(function () {
+                                            request().success([]);
+                                            rest.calls.reset();
                                         });
 
-                                        describe('when no items on scope', function () {
+                                        it('increment offset with count', function () {
+                                            ctx.searchForMore();
+                                            expect(request().params.data.args.subset).toEqual({offset: 10, count: 11});
+                                        });
+
+                                        it('only search for more when not working', function () {
+                                            ctx.working = true;
+                                            ctx.searchForMore();
+                                            expect(rest.calls.first()).toBeUndefined();
+                                        });
+                                    });
+
+                                    describe('when no more are found', function () {
+                                        beforeEach(function () {
+                                            request().success([]);
+                                        });
+
+                                        it('send notification', function () {
+                                            expect(dispatcher['system.info']).toEqual({
+                                                code: 'no.more.results.found',
+                                                default: 'No more results found.'
+                                            });
+                                        });
+                                    });
+
+                                    describe('when no more results notification is disabled', function () {
+                                        beforeEach(function () {
+                                            ctx.init({noMoreResultsNotification: false});
+                                            rest.calls.reset();
+                                            ctx.searchForMore();
+                                            request().success([]);
+                                        });
+
+                                        it('no notification is sent', function () {
+                                            expect(dispatcher['system.info']).toBeUndefined();
+                                        });
+
+                                        it('expose no more results flag on scope', function () {
+                                            expect(ctx.noMoreResults).toBeTruthy();
+                                        });
+
+                                        describe('and when there are again more results', function () {
                                             beforeEach(function () {
-                                                ctx.results = [];
-                                                request().success([]);
+                                                request().success(results);
                                             });
 
-                                            it('no notification sent', function () {
-                                                expect(dispatcher['system.info']).toBeUndefined();
+                                            it('reset no more results flag on scope', function () {
+                                                expect(ctx.noMoreResults).toBeFalsy();
                                             });
+                                        });
+                                    });
+
+                                    describe('when no items on scope', function () {
+                                        beforeEach(function () {
+                                            ctx.results = [];
+                                            request().success([]);
+                                        });
+
+                                        it('no notification sent', function () {
+                                            expect(dispatcher['system.info']).toBeUndefined();
                                         });
                                     });
                                 });
                             });
                         });
+                    });
 
-                        it('do not subscribe for end of page events when not enabled', function () {
-                            ctx.init({});
-                            expect(topics['end.of.page']).toBeUndefined();
+                    it('do not subscribe for end of page events when not enabled', function () {
+                        ctx.init({});
+                        expect(topics['end.of.page']).toBeUndefined();
+                    });
+
+                    it('a custom page size can be specified on init', function () {
+                        ctx.init({subset: {count: 5}});
+                        ctx.search();
+                        expect(request().params.data.args).toEqual({
+                            namespace: 'N',
+                            type: undefined,
+                            subset: {offset: 0, count: 6}
                         });
+                    });
 
-                        it('a custom page size can be specified on init', function () {
-                            ctx.init({subset: {count: 5}});
-                            ctx.search();
-                            expect(request().params.data.args).toEqual({namespace: 'N', type: undefined, subset: {offset: 0, count: 6}});
-                        });
-
-                        it('a custom sorting can be specified on init', function () {
-                            ctx.init({
-                                sortings: [
-                                    {on: 'field', orientation: 'asc'}
-                                ]
-                            });
-                            ctx.search();
-                            expect(request().params.data.args.sortings).toEqual([
+                    it('a custom sorting can be specified on init', function () {
+                        ctx.init({
+                            sortings: [
                                 {on: 'field', orientation: 'asc'}
-                            ]);
+                            ]
+                        });
+                        ctx.search();
+                        expect(request().params.data.args.sortings).toEqual([
+                            {on: 'field', orientation: 'asc'}
+                        ]);
+                    });
+
+                    it('on init filters can be decorated with the decorators provider', function () {
+                        ctx.init({entity: 'decorated-entity', context: 'action', filters: {field: 'msg'}});
+                        ctx.search();
+                        expect(request().params.data.args.field).toEqual('decorated msg');
+                    });
+
+                    it('decorating on init filters does not affect source', function () {
+                        ctx.init({entity: 'decorated-entity', context: 'action', filters: {field: 'msg'}});
+                        ctx.search();
+                        expect(ctx.filters.field).toEqual('msg');
+                    });
+
+                    it('when route params provides type and no type is passed to init then configure tpe', inject(function ($routeParams) {
+                        $routeParams.type = 'type';
+                        ctx.init({});
+                        ctx.search();
+                        expect(request().params.data.args.type).toEqual('type');
+                    }));
+
+                    it('when init receives type do not override it with route params', inject(function ($routeParams) {
+                        $routeParams.type = 'type';
+                        ctx.init({filters: {type: 'original'}});
+                        ctx.search();
+                        expect(request().params.data.args.type).toEqual('original');
+                    }));
+
+                    it('when init and include carousel items', function () {
+                        ctx.init({
+                            includeCarouselItems: true
+                        });
+                        ctx.search();
+                        expect(request().params.headers['X-Binarta-Carousel']).toBeTruthy();
+                    });
+
+                    describe('when init with onRender expression', function () {
+                        var capturedRender, capturedDestroy, results;
+
+                        beforeEach(function () {
+                            results = [{id: 1}, {id: 2}];
+                            $scope.captureRender = function (results) {
+                                capturedRender = results;
+                            };
+                            $scope.captureDestroy = function (results) {
+                                capturedDestroy = results;
+                            };
+                            ctx.init({onRender: 'captureRender(results)', onDestroy: 'captureDestroy(results)'});
+                            ctx.search();
+                            request().success(results);
                         });
 
-                        it('on init filters can be decorated with the decorators provider', function () {
-                            ctx.init({entity: 'decorated-entity', context: 'action', filters: {field: 'msg'}});
-                            ctx.search();
-                            expect(request().params.data.args.field).toEqual('decorated msg');
+                        it('on success results are passed to expression', function () {
+                            expect(capturedRender).toEqual(results);
                         });
 
-                        it('decorating on init filters does not affect source', function () {
-                            ctx.init({entity: 'decorated-entity', context: 'action', filters: {field: 'msg'}});
-                            ctx.search();
-                            expect(ctx.filters.field).toEqual('msg');
-                        });
-
-                        it('when route params provides type and no type is passed to init then configure tpe', inject(function ($routeParams) {
-                            $routeParams.type = 'type';
-                            ctx.init({});
-                            ctx.search();
-                            expect(request().params.data.args.type).toEqual('type');
-                        }));
-
-                        it('when init receives type do not override it with route params', inject(function ($routeParams) {
-                            $routeParams.type = 'type';
-                            ctx.init({filters: {type: 'original'}});
-                            ctx.search();
-                            expect(request().params.data.args.type).toEqual('original');
-                        }));
-
-                        it('when init and include carousel items', function () {
-                            ctx.init({
-                                includeCarouselItems: true
-                            });
-                            ctx.search();
-                            expect(request().params.headers['X-Binarta-Carousel']).toBeTruthy();
-                        });
-
-                        describe('when init with onRender expression', function() {
-                            var capturedRender, capturedDestroy, results;
-
-                            beforeEach(function() {
-                                results = [{id:1}, {id:2}];
-                                $scope.captureRender = function(results) {
-                                    capturedRender = results;
-                                };
-                                $scope.captureDestroy = function(results) {
-                                    capturedDestroy = results;
-                                };
-                                ctx.init({onRender: 'captureRender(results)', onDestroy:'captureDestroy(results)'});
-                                ctx.search();
-                                request().success(results);
-                            });
-
-                            it('on success results are passed to expression', function() {
-                                expect(capturedRender).toEqual(results);
-                            });
-
-                            describe('and on $destroy', function() {
-                                beforeEach(function() {
-                                    capturedRender = undefined;
-                                    $scope.$destroy();
-                                });
-
-                                it('then full result set is passed to expression', function() {
-                                    expect(capturedDestroy).toEqual(ctx.results);
-                                });
-                            });
-
-                        });
-
-                        describe('when init with search template defined', function () {
+                        describe('and on $destroy', function () {
                             beforeEach(function () {
-                                config.searchSettings = {
-                                    name: {
-                                        entity: 'entity',
-                                        context: 'action',
-                                        filters:{
-                                            locale: 'default',
-                                            customField: 'custom',
-                                            sortings: [
-                                                {on:'on'}
-                                            ]
-                                        },
-                                        autosearch:true,
-                                        subset:{count:1}
-                                    }
+                                capturedRender = undefined;
+                                $scope.$destroy();
+                            });
+
+                            it('then full result set is passed to expression', function () {
+                                expect(capturedDestroy).toEqual(ctx.results);
+                            });
+                        });
+
+                    });
+
+                    describe('when init with search template defined', function () {
+                        beforeEach(function () {
+                            config.searchSettings = {
+                                name: {
+                                    entity: 'entity',
+                                    context: 'action',
+                                    filters: {
+                                        locale: 'default',
+                                        customField: 'custom',
+                                        sortings: [
+                                            {on: 'on'}
+                                        ]
+                                    },
+                                    autosearch: true,
+                                    subset: {count: 1}
                                 }
-                            });
-
-                            it('use template settings', function () {
-                                ctx.init({settings: 'name'});
-
-                                expect(request().params.url).toEqual('http://host/api/query/entity/action');
-                                expect(request().params.data.args.customField).toEqual('custom');
-                                expect(request().params.data.args.subset.count).toEqual(2);
-                            });
-
-                            it('template settings can be overridden', function () {
-                                ctx.init({settings: 'name', context:'override'});
-
-                                expect(request().params.url).toEqual('http://host/api/query/entity/override');
-                            });
-
-                            it('filters are extended', function () {
-                                ctx.init({settings: 'name', filters: {extraField: 'extra', sortings: [{on: 'new'}]}});
-
-                                expect(request().params.data.args.customField).toEqual('custom');
-                                expect(request().params.data.args.extraField).toEqual('extra');
-                                expect(request().params.data.args.sortings).toEqual([{on: 'new'}]);
-                            });
-
-                            it('settings in config are not modified', function () {
-                                ctx.init({settings: 'name', context:'override'});
-
-                                expect(config.searchSettings.name.context).toEqual('action');
-                            });
+                            }
                         });
 
-                        describe('view mode', function () {
-                            it('defaults to undefined', inject(function ($location) {
-                                ctx.init({});
-                                expect(ctx.viewMode).toBeUndefined();
-                                expect($location.search().viewMode).toBeUndefined();
-                            }));
+                        it('use template settings', function () {
+                            ctx.init({settings: 'name'});
 
-                            it('can be specified and exposed on scope', inject(function ($location) {
-                                ctx.init({viewMode: 'x'});
-                                expect(ctx.viewMode).toEqual('x');
-                                expect($location.search().viewMode).toEqual('x');
-                            }));
-
-                            it('view mode specified on $location overrides init', inject(function ($location) {
-                                $location.search().viewMode = 'x';
-                                ctx.init({viewMode: 'y'});
-                                expect(ctx.viewMode).toEqual('x');
-                                expect($location.search().viewMode).toEqual('x');
-                            }));
+                            expect(request().params.url).toEqual('http://host/api/query/entity/action');
+                            expect(request().params.data.args.customField).toEqual('custom');
+                            expect(request().params.data.args.subset.count).toEqual(2);
                         });
-                    });     
+
+                        it('template settings can be overridden', function () {
+                            ctx.init({settings: 'name', context: 'override'});
+
+                            expect(request().params.url).toEqual('http://host/api/query/entity/override');
+                        });
+
+                        it('filters are extended', function () {
+                            ctx.init({settings: 'name', filters: {extraField: 'extra', sortings: [{on: 'new'}]}});
+
+                            expect(request().params.data.args.customField).toEqual('custom');
+                            expect(request().params.data.args.extraField).toEqual('extra');
+                            expect(request().params.data.args.sortings).toEqual([{on: 'new'}]);
+                        });
+
+                        it('settings in config are not modified', function () {
+                            ctx.init({settings: 'name', context: 'override'});
+
+                            expect(config.searchSettings.name.context).toEqual('action');
+                        });
+                    });
+
+                    describe('view mode', function () {
+                        it('defaults to undefined', inject(function ($location) {
+                            ctx.init({});
+                            expect(ctx.viewMode).toBeUndefined();
+                            expect($location.search().viewMode).toBeUndefined();
+                        }));
+
+                        it('can be specified and exposed on scope', inject(function ($location) {
+                            ctx.init({viewMode: 'x'});
+                            expect(ctx.viewMode).toEqual('x');
+                            expect($location.search().viewMode).toEqual('x');
+                        }));
+
+                        it('view mode specified on $location overrides init', inject(function ($location) {
+                            $location.search().viewMode = 'x';
+                            ctx.init({viewMode: 'y'});
+                            expect(ctx.viewMode).toEqual('x');
+                            expect($location.search().viewMode).toEqual('x');
+                        }));
+                    });
                 });
             });
+        });
 
         it('on $routeUpdate adjust view mode', inject(function ($location) {
             $location.search().viewMode = 'y';
@@ -712,6 +719,41 @@ describe('search.js', function () {
             expect(ctrl.viewMode).toEqual('y');
             expect($location.search().viewMode).toEqual('y');
         }));
+
+    });
+
+    describe('BinartaSearchController template selection', function () {
+        it('expects user provided template for backwards compatibility', inject(function ($controller) {
+            $ctrl = $controller('BinartaSearchController', {$scope: $scope});
+            expect($ctrl.templateUrl).toEqual('partials/search/index.html');
+        }));
+
+        describe('when using library template', function () {
+            beforeEach(inject(function (config) {
+                config.BinSearchCatalogPage = {useLibraryTemplate: true};
+            }));
+
+            it('expose library template', inject(function (config, $controller) {
+                $ctrl = $controller('BinartaSearchController', {$scope: $scope});
+                expect($ctrl.templateUrl).toEqual('bin-search-page-default.html');
+            }));
+
+            it('override library template', inject(function (config, $controller) {
+                config.BinSearchCatalogPage.templateUrl = 't';
+                $ctrl = $controller('BinartaSearchController', {$scope: $scope});
+                expect($ctrl.templateUrl).toEqual('t');
+            }));
+        });
+    });
+
+    describe('<bin-search-widget/>', function () {
+        describe('with controller', function () {
+            beforeEach(inject(function ($componentController) {
+                $ctrl = $componentController('binSearchWidget', undefined, {});
+            }));
+
+            it('exists', function() {})
+        });
     });
 
     describe('RedirectToSearchController', function () {
@@ -813,17 +855,22 @@ describe('search.js', function () {
                 });
             });
 
-            describe('on init with named query', function() {
-                beforeEach(function() {
+            describe('on init with named query', function () {
+                beforeEach(function () {
                     $scope.init({
-                        entity:'E',
-                        namedQuery:'findByNamedQuery',
-                        redirectIdToField:'customId'
+                        entity: 'E',
+                        namedQuery: 'findByNamedQuery',
+                        redirectIdToField: 'customId'
                     });
                 });
 
                 it('fetch entity from server', function () {
-                    expect(request().params.params).toEqual({namespace: 'N', context:'findByNamedQuery', customId: 'id', treatInputAsId: true});
+                    expect(request().params.params).toEqual({
+                        namespace: 'N',
+                        context: 'findByNamedQuery',
+                        customId: 'id',
+                        treatInputAsId: true
+                    });
                 });
             });
 
@@ -918,7 +965,7 @@ describe('search.js', function () {
                 it('and submit', function () {
                     expect(request().params.method).toEqual('PUT');
                     expect(request().params.url).toEqual('http://host/api/entity/E');
-                    expect(request().params.data).toEqual({namespace: 'N', context:'add'});
+                    expect(request().params.data).toEqual({namespace: 'N', context: 'add'});
                     expect(request().params.withCredentials).toBeTruthy();
                 });
 
@@ -954,7 +1001,7 @@ describe('search.js', function () {
                         expect($scope.entity).toEqual({id: '/id'});
                     });
 
-                    it('test', function() {
+                    it('test', function () {
                         expect(dispatcher['binarta.entity.loaded']).toEqual($scope.entity);
                     });
 
@@ -966,17 +1013,17 @@ describe('search.js', function () {
                         it('perform HTTP POST', function () {
                             expect(request(1).params.method).toEqual('POST');
                             expect(request(1).params.url).toEqual('http://host/api/entity/E');
-                            expect(request(1).params.data).toEqual({context:'update', id: '/id'});
+                            expect(request(1).params.data).toEqual({context: 'update', id: '/id'});
                             expect(request(1).params.withCredentials).toBeTruthy();
                         });
 
                         it('succeeds without on success handler', function () {
-                            request(1).success({id:'id'});
+                            request(1).success({id: 'id'});
                         });
 
                         it('succeeds with on success handler', function () {
                             ctx.onSuccess = jasmine.createSpy('onSuccess');
-                            request(1).success({id:'id'});
+                            request(1).success({id: 'id'});
                             expect(ctx.onSuccess).toHaveBeenCalled();
                         });
                     });
@@ -985,15 +1032,15 @@ describe('search.js', function () {
                         ctx.entity = 'decorated-entity';
                         entity.field = 'field';
                         $scope.update();
-                        expect(request(1).params.data).toEqual({id: '/id', field:'decorated field', context:'update'})
+                        expect(request(1).params.data).toEqual({id: '/id', field: 'decorated field', context: 'update'})
                     });
 
-                    describe('on remove', function() {
-                        beforeEach(function() {
+                    describe('on remove', function () {
+                        beforeEach(function () {
                             $scope.remove()
                         });
 
-                        it('perform HTTP DELETE', function() {
+                        it('perform HTTP DELETE', function () {
                             expect(request(1).params.method).toEqual('DELETE');
                             expect(request(1).params.url).toEqual('http://host/api/entity/E?id=%2Fid');
                             expect(request(1).params.withCredentials).toBeTruthy();
@@ -1016,7 +1063,7 @@ describe('search.js', function () {
         it('create with mask', function () {
             $scope.forCreate({mask: {field: 'value'}});
             $scope.create();
-            expect(request().params.data).toEqual({namespace: 'N', field: 'value', context:'add'});
+            expect(request().params.data).toEqual({namespace: 'N', field: 'value', context: 'add'});
         });
 
         describe('for create with var', function () {
@@ -1030,7 +1077,7 @@ describe('search.js', function () {
 
             it('and submit', function () {
                 $scope.create();
-                expect(request().params.data).toEqual({namespace: 'N', context:'add'});
+                expect(request().params.data).toEqual({namespace: 'N', context: 'add'});
             });
         });
 
